@@ -24,7 +24,7 @@ jobs:
       issues: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Resolve the latest xlsx release from the SheetJS CDN
         id: latest

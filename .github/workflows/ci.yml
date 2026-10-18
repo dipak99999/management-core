@@ -35,7 +35,7 @@ jobs:
       # Keep bcrypt cheap in CI; prod default is 12.
       BCRYPT_COST: "4"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v4
         with:
@@ -160,7 +160,7 @@ jobs:
     outputs:
       code: ${{ steps.changes.outputs.code }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - id: changes
@@ -236,7 +236,7 @@ jobs:
       # otherwise add ~300ms each per test.
       BCRYPT_COST: "4"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v4
         with:
@@ -302,7 +302,7 @@ jobs:
   security-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
         with: { version: 9 }
       - uses: actions/setup-node@v4
