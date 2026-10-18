@@ -32,7 +32,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.0",
+    "@anthropic-ai/sdk": "^0.134.0",
     "@lumaara/shared-types": "workspace:*",
     "@prisma/client": "^5.20.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
@@ -42,7 +42,7 @@
     "@vitest/coverage-v8": "^3.2.7",
     "bcryptjs": "^2.4.3",
     "prisma": "^5.20.0",
-    "tsx": "^4.19.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.6.0",
     "vitest": "^3.2.7",
     "zod": "^3.23.8"
