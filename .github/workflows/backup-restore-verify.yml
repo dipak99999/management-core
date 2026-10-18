@@ -58,7 +58,7 @@ jobs:
       NODE_ENV: test
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node + pnpm
         uses: pnpm/action-setup@v4
@@ -209,7 +209,7 @@ jobs:
       NODE_ENV: test
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Need HEAD + at least HEAD~1 so we can roll back the working
           # tree to the previous migration set, create a backup, then
