@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+# Pre-commit gate: lint + typecheck the changed files only.
+#
+# What runs (see lint-staged config in package.json):
+#   • App code: eslint --max-warnings 0 on changed .ts/.tsx in apps/
+#   • Service code: tsc --noEmit on changed .ts in services/
+#   • Schema: prisma validate + check:tenant-guard + check:tenant-index
+#     when packages/db/prisma/schema.prisma is touched.
+#
+# Keep this gate fast (<10s typical). Full-suite tests belong in CI, not
+# here — pre-commit should feel instantaneous or developers disable it.
+#
+# Bypass (rare, document in commit): `git commit --no-verify`.
+pnpm exec lint-staged

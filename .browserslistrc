@@ -1,0 +1,33 @@
+# Browser targets for the staff + portal apps.
+#
+# Consumed by:
+#   • Next.js (ships polyfills + SWC transforms to match)
+#   • autoprefixer (CSS vendor prefixes)
+#   • lightningcss / postcss presets
+#   • Browserslist-aware tools (eslint-plugin-compat, etc.)
+#
+# Policy: cover ~95% of real-world traffic without carrying IE11-era
+# polyfills. "last 2 versions" catches the current + previous release of
+# every evergreen browser; "> 0.5%" covers everything above our noise
+# floor; "not dead" drops abandoned engines. Firefox ESR gets a dedicated
+# line because its support cycle is longer than the "last 2 versions"
+# window implies.
+
+[production]
+> 0.5%
+last 2 versions
+Firefox ESR
+not dead
+not op_mini all
+not IE 11
+not Baidu <= 7
+not kaios > 0
+not and_qq > 0
+
+[development]
+# Dev iterates on current-stable only — faster compiles, no polyfill
+# payload downloaded during HMR. If a dev's local Chrome is < 2 versions
+# behind, upgrade before complaining.
+last 1 chrome version
+last 1 firefox version
+last 1 safari version

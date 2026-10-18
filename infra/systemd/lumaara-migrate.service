@@ -1,0 +1,32 @@
+# One-shot migration runner. Runs `prisma migrate deploy` and exits.
+# Every service unit's [Unit] section has `After=lumaara-migrate.service` so
+# the stack won't start against a stale schema.
+#
+# On subsequent deploys, restart this unit to pick up new migrations:
+#   sudo systemctl restart lumaara-migrate
+[Unit]
+Description=Lumaara Prisma migrate deploy (one-shot)
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=oneshot
+User=lumaara
+Group=lumaara
+WorkingDirectory=/opt/lumaara
+EnvironmentFile=/etc/lumaara/env
+ExecStart=/usr/bin/pnpm --filter @lumaara/db exec prisma migrate deploy
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lumaara-migrate
+
+# RemainAfterExit=yes so `systemctl status` shows "active (exited)" — units
+# that depend on this via After= will see it as satisfied.
+RemainAfterExit=yes
+
+# Failure is a hard-stop: don't boot backends against a broken migration.
+# On failure, journalctl -u lumaara-migrate shows the exact prisma error.
+
+[Install]
+WantedBy=lumaara.target

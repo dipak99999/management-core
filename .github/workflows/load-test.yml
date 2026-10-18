@@ -1,0 +1,113 @@
+# Nightly load-test run. Boots the full stack in a GH-hosted runner,
+# fires scripts/load-test.mjs, and uploads the output + a text artifact
+# so trends (regression in p95 after a release) are visible without a
+# separate perf dashboard.
+#
+# NOT a merge gate — perf tests on shared CI runners are flaky and the
+# noise would gate too many PRs. If a release looks slow, inspect the
+# last few runs here before shipping.
+
+name: load-test
+
+on:
+  schedule:
+    - cron: "0 4 * * *" # 04:00 UTC daily
+  workflow_dispatch:
+    inputs:
+      workers:
+        description: "LOAD_WORKERS (fixed-concurrency scenarios)"
+        type: string
+        default: "20"
+      scenario:
+        description: "LOAD_SCENARIO (1-4, blank = all)"
+        type: string
+        default: ""
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lumaara
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/lumaara?schema=public
+      JWT_SECRET: load-test-only-jwt-32chars-min-abcdef
+      PORTAL_JWT_SECRET: load-test-only-portal-32chars-min-abcdef
+      UNSUBSCRIBE_SECRET: load-test-only-unsubscribe-32chars-min-abc
+      MASTER_SECRET_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      REDIS_URL: redis://localhost:6379
+      SIGNUP_REQUIRE_EMAIL_VERIFY: "0"
+      BCRYPT_COST: "4"
+      TENANT_GUARD_MODE: warn
+      NODE_ENV: production
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+
+      - name: Prisma generate + migrate
+        run: |
+          pnpm --filter @lumaara/db exec prisma generate
+          pnpm --filter @lumaara/db exec prisma migrate deploy
+
+      - name: Seed demo tenant
+        run: pnpm --filter @lumaara/db exec tsx prisma/seed.ts
+
+      - name: Boot services in the background
+        run: |
+          bash scripts/start-all-services.sh > /tmp/services.log 2>&1 &
+          echo $! > /tmp/services.pid
+          bash scripts/wait-for-stack.sh
+
+      - name: Run load test
+        env:
+          LOAD_WORKERS: ${{ github.event.inputs.workers || '20' }}
+          LOAD_SCENARIO: ${{ github.event.inputs.scenario || '' }}
+        run: |
+          node scripts/load-test.mjs | tee /tmp/load-test-$(date +%Y%m%d).txt
+
+      - name: Upload load-test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-${{ github.run_id }}
+          path: /tmp/load-test-*.txt
+          retention-days: 90
+
+      - name: Dump service logs on failure
+        if: failure()
+        run: |
+          echo "=== services.log ==="
+          tail -200 /tmp/services.log || true
+
+      - name: Stop services
+        if: always()
+        run: |
+          if [ -f /tmp/services.pid ]; then
+            kill $(cat /tmp/services.pid) 2>/dev/null || true
+          fi

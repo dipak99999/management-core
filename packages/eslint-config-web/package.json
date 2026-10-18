@@ -1,0 +1,15 @@
+{
+  "name": "@lumaara/eslint-config-web",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "peerDependencies": {
+    "eslint-config-next": "^16.3.8"
+  },
+  "devDependencies": {
+    "eslint-config-next": "^16.3.8"
+  }
+}

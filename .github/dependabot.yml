@@ -1,0 +1,66 @@
+# Weekly dependency bump PRs. Grouping lowers PR noise — one bump per
+# "ecosystem × type × severity" cluster rather than one PR per package.
+#
+# `security-updates` runs daily and is NOT grouped — a CVE patch should
+# surface as its own PR so it can be fast-tracked without waiting for the
+# next weekly batch.
+#
+# Allowlist discipline: Prisma, Next.js, and React updates land in their
+# own groups because they're routinely breaking (migration drift,
+# server-component API churn, hook deprecations). Reviewing them in
+# isolation keeps the "fix the obvious lint error" bump distinguishable
+# from "spend an afternoon on React 20 migration."
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+    groups:
+      prisma:
+        patterns:
+          - "@prisma/*"
+          - "prisma"
+      nextjs:
+        patterns:
+          - "next"
+          - "eslint-config-next"
+          - "@next/*"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      opentelemetry:
+        patterns:
+          - "@opentelemetry/*"
+      types:
+        patterns:
+          - "@types/*"
+        exclude-patterns:
+          - "@types/react"
+          - "@types/react-dom"
+          - "@types/node"
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+        exclude-patterns:
+          - "@prisma/*"
+          - "prisma"
+          - "next"
+          - "eslint-config-next"
+          - "@next/*"
+          - "react"
+          - "react-dom"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels: ["ci"]

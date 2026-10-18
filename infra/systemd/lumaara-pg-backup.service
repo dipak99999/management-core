@@ -1,0 +1,30 @@
+# Nightly host-level Postgres backup. Runs as `postgres` (owns the cluster),
+# writes to /var/lumaara/backups/postgres/, prunes old files.
+#
+# This is INDEPENDENT of the per-tenant S3 backup job (services/scheduler/src/
+# jobs/backup-auto.ts) — that one requires the tenant to have configured an
+# S3 integration. This unit ensures every host has a local backup regardless
+# of tenant config, so a fresh box always has *some* recovery path.
+#
+# For DR ship these off-box via rsync/rclone to a second location (see
+# docs/DEPLOY-BAREMETAL.md § "Backup DR").
+
+[Unit]
+Description=Lumaara host-level PostgreSQL backup
+Requires=postgresql.service
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=postgres
+Group=postgres
+Environment=LUMAARA_BACKUP_DIR=/var/lumaara/backups/postgres
+Environment=LUMAARA_BACKUP_DB=lumaara
+Environment=LUMAARA_BACKUP_KEEP_DAYS=30
+ExecStart=/opt/lumaara/infra/systemd/pg-backup.sh
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lumaara/backups
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lumaara-pg-backup

@@ -1,0 +1,168 @@
+# Prometheus alerting rules for Lumaara services.
+#
+# Wired into prometheus by appending to prometheus.yaml:
+#   rule_files:
+#     - alerts.yaml
+#
+# Metric shapes (emitted by mountBasicOps() in packages/service-auth):
+#   http_requests_total{service}          — cumulative request count
+#   http_errors_total{service}            — cumulative 5xx count
+#   http_requests_by_status{service,status} — per-status
+#   http_request_duration_ms_sum{service} — cumulative latency
+#
+# Alertmanager routing/dedup config is out of scope here; wire notifications
+# (Slack/PagerDuty/etc) via the standard Alertmanager config that receives
+# these firing alerts.
+
+groups:
+  - name: lumaara-service-health
+    interval: 30s
+    rules:
+      # ── Service down ──
+      # A service that stops responding to Prometheus scrape for 2 minutes
+      # is either crashed or unreachable — either way, page.
+      - alert: LumaaraServiceDown
+        expr: up{job="lumaara-services"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.instance }} has been down for 2 minutes"
+          runbook: "Check `docker compose ps`. Investigate crash logs: `docker compose logs {{ $labels.instance }} --tail 200`."
+
+      # ── High 5xx rate ──
+      # >5% of requests returning 5xx over a 5-min window = degraded.
+      # >20% = crit. Uses rate() so brief spikes at low traffic don't page.
+      - alert: LumaaraHighErrorRate
+        expr: |
+          (
+            rate(http_errors_total{job="lumaara-services"}[5m])
+            /
+            rate(http_requests_total{job="lumaara-services"}[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.service }} error rate is {{ $value | humanizePercentage }}"
+          runbook: "Query ErrorLog: `SELECT * FROM error_logs WHERE service='{{ $labels.service }}' ORDER BY createdAt DESC LIMIT 20;`"
+
+      - alert: LumaaraCriticalErrorRate
+        expr: |
+          (
+            rate(http_errors_total{job="lumaara-services"}[5m])
+            /
+            rate(http_requests_total{job="lumaara-services"}[5m])
+          ) > 0.20
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.service }} at CRITICAL error rate {{ $value | humanizePercentage }}"
+          runbook: "Page on-call. Consider rolling back the latest deploy."
+
+      # ── 4xx spike ──
+      # A sustained 4xx spike usually means a client-side bug or a bad
+      # deploy exposed schema drift. Warns, doesn't page — often self-heals.
+      - alert: LumaaraHigh4xxRate
+        expr: |
+          (
+            sum by (service) (rate(http_requests_by_status{status=~"4..",job="lumaara-services"}[5m]))
+            /
+            rate(http_requests_total{job="lumaara-services"}[5m])
+          ) > 0.30
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.service }} 4xx rate {{ $value | humanizePercentage }} for 10min"
+          runbook: "Check whether a client version was recently deployed. Cross-reference against ErrorLog for 400/404/422 clusters."
+
+      # ── Latency: p50 proxy ──
+      # We only export a sum (in-memory Prometheus counters — see ops.ts).
+      # Divide sum by count to get avg-latency as a rough p50 proxy.
+      # Real p50/p99 would need a histogram; when OTel is on, use span
+      # duration histograms instead.
+      - alert: LumaaraHighAvgLatency
+        expr: |
+          (
+            rate(http_request_duration_ms_sum{job="lumaara-services"}[5m])
+            /
+            rate(http_requests_total{job="lumaara-services"}[5m])
+          ) > 1000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.service }} avg latency {{ $value | printf \"%.0f\" }}ms for 10min"
+          runbook: "Check postgres slow-query log. Common cause: missing index after a schema change."
+
+  - name: lumaara-db-health
+    interval: 30s
+    rules:
+      # ── Postgres up ──
+      # postgres_exporter is not deployed by default; enable if you want DB-
+      # level metrics. Until then, service-down + high-error-rate is the
+      # proxy signal.
+      - alert: LumaaraPostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Postgres reporting down for 1 minute"
+          runbook: "docker compose logs postgres --tail 200. Check disk space, connection limit."
+
+      # ── Connection pool saturation ──
+      # Prisma default pool size is num_physical_cpus * 2 + 1. Once a service
+      # is saturated on the pool, every subsequent request queues → cascading
+      # latency. Requires pg_stat_activity via postgres_exporter.
+      - alert: LumaaraDBConnectionPoolSaturated
+        expr: |
+          (
+            sum(pg_stat_activity_count{state="active"})
+            /
+            sum(pg_settings_max_connections)
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Postgres connection pool {{ $value | humanizePercentage }} utilised"
+          runbook: "Look for slow queries: `SELECT query, state, wait_event FROM pg_stat_activity WHERE state != 'idle' ORDER BY query_start;`"
+
+  - name: lumaara-scheduler-health
+    interval: 60s
+    rules:
+      # ── Scheduler ticks stalling ──
+      # Scheduler exposes per-tick metrics via /admin/scheduler-status; not
+      # scraped as Prometheus by default. If wiring that in later, this rule
+      # would fire when a critical job's lastOkAt is > 2h stale.
+      # Meanwhile, service-down + errorLog spike catch scheduler outages.
+      - alert: LumaaraSchedulerDown
+        expr: up{instance="scheduler:4009"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Scheduler down for 2min — backup + cron jobs won't fire"
+          runbook: "docker compose logs scheduler --tail 200. Check REDIS_URL is reachable."
+
+      # ── Scheduler job stuck failing ──
+      # scheduler_consecutive_failures gauge (from /metrics-scheduler on the
+      # scheduler service, see prometheus.yaml) crosses the threshold. The
+      # scheduler itself also emits a FATAL log line
+      # `scheduler_job_failing_repeatedly` on the same event.
+      - alert: LumaaraSchedulerJobStuck
+        expr: scheduler_consecutive_failures >= 3
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: "Scheduler job {{ $labels.job }} has failed {{ $value }} runs in a row"
+          runbook: |
+            Fetch job state: `curl scheduler:4009/jobs | jq '.[] | select(.consecutiveFailures > 0)'`.
+            Check scheduler logs for the job's last error. Common causes:
+            downstream service down (service dependency), DB tenant data
+            malformed (fix the row), or env misconfig (e.g. missing
+            SMTP creds for email-sequences).

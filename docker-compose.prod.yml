@@ -1,0 +1,474 @@
+# Production overrides — layer on top of docker-compose.yml:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Every secret uses ${VAR:?err} — compose refuses to boot the stack if the
+# variable is unset or empty, so you cannot accidentally deploy the dev
+# defaults from docker-compose.yml. Set them via .env in this directory
+# (chmod 600!) or via your orchestrator's secret store.
+#
+# Required env vars (fail-fast — compose will bail out with a clear error):
+#   JWT_SECRET             — >=32 char random. Used by service-auth to sign JWTs.
+#   PORTAL_JWT_SECRET      — >=32 char random. Portal user tokens.
+#   MASTER_SECRET_KEY      — >=32 char random. Encrypts TenantIntegration
+#                            secrets + AnonymizationArchive payloads. LOSING
+#                            THIS BRICKS ALL ENCRYPTED DATA — back it up.
+#   POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB — DB credentials.
+#   SCHEDULER_API_TOKEN    — Bearer token for scheduler's HTTP-fanout jobs.
+#
+# Recommended env vars (have safe production defaults but should be reviewed):
+#   APP_VERSION            — Git SHA or semver tag. Surfaces in logs + OTEL.
+#   PUBLIC_URL             — Base URL customers see (e.g. https://erp.example.com).
+#   OTEL_EXPORTER_OTLP_ENDPOINT — Set to enable OpenTelemetry export.
+#   TENANT_GUARD_MODE=enforce   — Default `enforce` in prod. The app-side guard
+#                                 throws on cross-tenant set queries.
+#   DB_CONNECTION_LIMIT    — Prisma pool size per service process (default 10).
+#                            Postgres default is 100 connections total — with
+#                            7 services × 10 = 70 you leave ~30 for admin
+#                            tooling + scheduler + migrations. Raising
+#                            without bumping Postgres `max_connections`
+#                            will cause "too many clients" errors under load.
+#                            If LUMAARA_APP_DATABASE_URL is set, append your
+#                            own `?connection_limit=N` there — the fallback
+#                            URL below honours DB_CONNECTION_LIMIT only when
+#                            the LUMAARA_APP_DATABASE_URL env is unset.
+#   DB_POOL_TIMEOUT        — Seconds Prisma waits for a free connection
+#                            before throwing P2024 (default 10). Match this
+#                            to your p99 route latency; higher values hide
+#                            saturation, lower surface it earlier.
+#
+# RLS activation (defense in depth — opt-in):
+#   LUMAARA_APP_DATABASE_URL — When set, every runtime service uses this URL
+#                              instead of the superuser one. Point it at the
+#                              `lumaara_app` NOSUPERUSER + NOBYPASSRLS role
+#                              (role created by migration
+#                              20261004030000_lumaara_app_role; set its
+#                              password with
+#                              scripts/rotate-lumaara-app-password.sh and
+#                              paste the URL this script prints).
+#   RLS_ENFORCE=true         — Turns on the Prisma `withRlsExtension` wrapper
+#                              in packages/db. Every tenant-scoped query is
+#                              then run inside a transaction that
+#                              SET LOCALs `app.current_tenant_id` from the
+#                              AsyncLocalStorage frame installed by
+#                              requireAuth / requirePortalAuth. Without
+#                              both LUMAARA_APP_DATABASE_URL AND
+#                              RLS_ENFORCE=true, services keep connecting
+#                              as the superuser (which bypasses RLS) and
+#                              the extension no-ops.
+#
+# The `migrate` service always uses DATABASE_ADMIN_URL (superuser) because
+# `prisma migrate deploy` needs DDL privileges that lumaara_app lacks by
+# design.
+
+services:
+  postgres:
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB required}
+    # Don't publish 5432 on prod — services reach postgres over the compose
+    # network. Only expose if you need external tools (DB migrations from CI).
+    ports: !reset []
+
+  redis:
+    ports: !reset []
+
+  # One-shot migration runner. Executes `prisma migrate deploy` against the
+  # prod DATABASE_URL, then exits. Every backend service depends on this
+  # completing successfully — apps won't boot against a schema-drifted DB.
+  # Reuses the accounting-service image (any service works; they all bundle
+  # the prisma CLI + shared schema via /packages/db).
+  #
+  # On subsequent deploys: docker recreates this container whenever the image
+  # changes (new migration files → new build layer), so migrations run again.
+  # If no new migrations, `migrate deploy` is a no-op.
+  migrate:
+    build:
+      context: .
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: accounting-service
+    environment:
+      # Migrations must run as a user with DDL privileges (CREATE SCHEMA,
+      # ALTER TABLE SET SCHEMA, GRANT). Use the admin URL — defaults to
+      # the runtime URL if unset, matching dev where both are the same.
+      DATABASE_URL: ${DATABASE_ADMIN_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public}
+      DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public}
+    entrypoint: []
+    command:
+      - /app/node_modules/.bin/prisma
+      - migrate
+      - deploy
+      - --schema=/app/packages/db/prisma/schema.prisma
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  auth-service:
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${LUMAARA_APP_DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=${DB_CONNECTION_LIMIT:-10}&pool_timeout=${DB_POOL_TIMEOUT:-10}}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required — 32+ char random}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      PORT: 4001
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@example.com}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      PORTAL_JWT_SECRET: ${PORTAL_JWT_SECRET:?PORTAL_JWT_SECRET required}
+      PORTAL_PUBLIC_URL: ${PORTAL_PUBLIC_URL:?PORTAL_PUBLIC_URL required}
+      MASTER_SECRET_KEY: ${MASTER_SECRET_KEY:?MASTER_SECRET_KEY required}
+      APP_VERSION: ${APP_VERSION:-unknown}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      TENANT_GUARD_MODE: ${TENANT_GUARD_MODE:-enforce}
+      RLS_ENFORCE: ${RLS_ENFORCE:-false}
+      NODE_ENV: production
+    ports: !reset []
+
+  accounting-service:
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${LUMAARA_APP_DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=${DB_CONNECTION_LIMIT:-10}&pool_timeout=${DB_POOL_TIMEOUT:-10}}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
+      PORT: 4002
+      PORTAL_JWT_SECRET: ${PORTAL_JWT_SECRET:?PORTAL_JWT_SECRET required}
+      MASTER_SECRET_KEY: ${MASTER_SECRET_KEY:?MASTER_SECRET_KEY required}
+      BACKUP_DIR: /var/lumaara/backups
+      BACKUP_KEEP_LAST: ${BACKUP_KEEP_LAST:-30}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-90}
+      REDIS_URL: redis://redis:6379
+      OTEL_SERVICE_NAME: accounting-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      APP_VERSION: ${APP_VERSION:-unknown}
+      TENANT_GUARD_MODE: ${TENANT_GUARD_MODE:-enforce}
+      RLS_ENFORCE: ${RLS_ENFORCE:-false}
+      EINVOICE_ADAPTER: ${EINVOICE_ADAPTER:-stub}
+      NODE_ENV: production
+    ports: !reset []
+
+  stock-service:
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${LUMAARA_APP_DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=${DB_CONNECTION_LIMIT:-10}&pool_timeout=${DB_POOL_TIMEOUT:-10}}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
+      PORT: 4003
+      OTEL_SERVICE_NAME: stock-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      APP_VERSION: ${APP_VERSION:-unknown}
+      TENANT_GUARD_MODE: ${TENANT_GUARD_MODE:-enforce}
+      RLS_ENFORCE: ${RLS_ENFORCE:-false}
+      NODE_ENV: production
+    ports: !reset []
+
+  crm-service:
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${LUMAARA_APP_DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=${DB_CONNECTION_LIMIT:-10}&pool_timeout=${DB_POOL_TIMEOUT:-10}}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
+      PORT: 4004
+      OTEL_SERVICE_NAME: crm-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      APP_VERSION: ${APP_VERSION:-unknown}
+      TENANT_GUARD_MODE: ${TENANT_GUARD_MODE:-enforce}
+      RLS_ENFORCE: ${RLS_ENFORCE:-false}
+      NODE_ENV: production
+    ports: !reset []
+
+  hr-service:
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${LUMAARA_APP_DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=${DB_CONNECTION_LIMIT:-10}&pool_timeout=${DB_POOL_TIMEOUT:-10}}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
+      PORT: 4005
+      OTEL_SERVICE_NAME: hr-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      APP_VERSION: ${APP_VERSION:-unknown}
+      TENANT_GUARD_MODE: ${TENANT_GUARD_MODE:-enforce}
+      RLS_ENFORCE: ${RLS_ENFORCE:-false}
+      NODE_ENV: production
+    ports: !reset []
+
+  projects-service:
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${LUMAARA_APP_DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=${DB_CONNECTION_LIMIT:-10}&pool_timeout=${DB_POOL_TIMEOUT:-10}}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
+      PORT: 4006
+      OTEL_SERVICE_NAME: projects-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      APP_VERSION: ${APP_VERSION:-unknown}
+      TENANT_GUARD_MODE: ${TENANT_GUARD_MODE:-enforce}
+      RLS_ENFORCE: ${RLS_ENFORCE:-false}
+      NODE_ENV: production
+    ports: !reset []
+
+  # Scheduler — can be scaled > 1 replica for HA. Postgres advisory-lock
+  # leader election (packages at services/scheduler/src/lib/leader-lock.ts)
+  # ensures exactly one instance runs the tick loops at a time; standbys
+  # poll every LEADER_HEARTBEAT_MS and take over if the leader dies. The
+  # /leader endpoint returns `{leader, electionEnabled}` for ops dashboards.
+  #
+  # To activate HA:
+  #   docker compose -f ... -f docker-compose.prod.yml up -d --scale scheduler=2
+  #
+  # Set LEADER_ELECTION=0 only for single-instance deploys that explicitly
+  # don't want the lock-polling overhead (~1 query/30s).
+  scheduler:
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${LUMAARA_APP_DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=${DB_CONNECTION_LIMIT:-10}&pool_timeout=${DB_POOL_TIMEOUT:-10}}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
+      PORT: 4009
+      LEADER_ELECTION: ${LEADER_ELECTION:-1}
+      LEADER_HEARTBEAT_MS: ${LEADER_HEARTBEAT_MS:-30000}
+      REDIS_URL: redis://redis:6379
+      OTEL_SERVICE_NAME: scheduler
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      APP_VERSION: ${APP_VERSION:-unknown}
+      TENANT_GUARD_MODE: ${TENANT_GUARD_MODE:-enforce}
+      RLS_ENFORCE: ${RLS_ENFORCE:-false}
+      SCHEDULER_API_TOKEN: ${SCHEDULER_API_TOKEN:?SCHEDULER_API_TOKEN required}
+      MASTER_SECRET_KEY: ${MASTER_SECRET_KEY:?MASTER_SECRET_KEY required}
+      BACKUP_DIR: /var/lumaara/backups
+      BACKUP_AUTO_ENABLE: ${BACKUP_AUTO_ENABLE:-0}
+      BACKUP_AUTO_INTERVAL_HOURS: ${BACKUP_AUTO_INTERVAL_HOURS:-24}
+      BACKUP_KEEP_LAST: ${BACKUP_KEEP_LAST:-30}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-90}
+      BACKUP_VERIFY_ENABLE: ${BACKUP_VERIFY_ENABLE:-0}
+      BACKUP_VERIFY_INTERVAL_HOURS: ${BACKUP_VERIFY_INTERVAL_HOURS:-168}
+      NODE_ENV: production
+    volumes:
+      - backups:/var/lumaara/backups
+    ports: !reset []
+
+  # -----------------------------------------------------------------------
+  # Next.js frontends. Only `shell` (staff) and `portal-web` (customer)
+  # publish host ports — the module remotes are reached via shell's internal
+  # rewrites (accounting-web:3001, buying-web:3002, ...) over the compose
+  # network. Put your own TLS terminator (Caddy / nginx / Cloudflare) in
+  # front of these two published ports.
+  # -----------------------------------------------------------------------
+
+  shell:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        APP: shell
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      # Internal proxy targets — shell's next.config.js rewrites() reads these.
+      ACCOUNTING_WEB_URL: http://accounting-web:3001
+      BUYING_WEB_URL: http://buying-web:3002
+      STOCK_WEB_URL: http://stock-web:3003
+      CRM_WEB_URL: http://crm-web:3004
+      HR_WEB_URL: http://hr-web:3005
+      PROJECTS_WEB_URL: http://projects-web:3006
+      # Backend service base URLs (used by client-side fetch via NEXT_PUBLIC_*).
+      NEXT_PUBLIC_AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:?AUTH_SERVICE_URL required (external URL clients hit)}
+      NEXT_PUBLIC_ACCOUNTING_SERVICE_URL: ${ACCOUNTING_SERVICE_URL:?ACCOUNTING_SERVICE_URL required}
+      NEXT_PUBLIC_STOCK_SERVICE_URL: ${STOCK_SERVICE_URL:?STOCK_SERVICE_URL required}
+      NEXT_PUBLIC_CRM_SERVICE_URL: ${CRM_SERVICE_URL:?CRM_SERVICE_URL required}
+      NEXT_PUBLIC_HR_SERVICE_URL: ${HR_SERVICE_URL:?HR_SERVICE_URL required}
+      NEXT_PUBLIC_PROJECTS_SERVICE_URL: ${PROJECTS_SERVICE_URL:?PROJECTS_SERVICE_URL required}
+    ports:
+      - "${SHELL_HOST_PORT:-8080}:3000"
+    depends_on:
+      accounting-web:
+        condition: service_healthy
+      buying-web:
+        condition: service_healthy
+      stock-web:
+        condition: service_healthy
+      crm-web:
+        condition: service_healthy
+      hr-web:
+        condition: service_healthy
+      projects-web:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('net').createConnection(3000, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1));"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  accounting-web:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        APP: accounting-web
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('net').createConnection(3001, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1));"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  buying-web:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        APP: buying-web
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('net').createConnection(3002, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1));"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  stock-web:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        APP: stock-web
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('net').createConnection(3003, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1));"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  crm-web:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        APP: crm-web
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('net').createConnection(3004, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1));"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  hr-web:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        APP: hr-web
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('net').createConnection(3005, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1));"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  projects-web:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        APP: projects-web
+    environment:
+      NODE_ENV: production
+      PORT: 3006
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('net').createConnection(3006, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1));"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  portal-web:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        APP: portal-web
+    environment:
+      NODE_ENV: production
+      PORT: 3007
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_ACCOUNTING_SERVICE_URL: ${ACCOUNTING_SERVICE_URL:?ACCOUNTING_SERVICE_URL required}
+    ports:
+      - "${PORTAL_HOST_PORT:-8081}:3007"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('net').createConnection(3007, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1));"
+      interval: 30s
+      timeout: 10s
+      retries: 5

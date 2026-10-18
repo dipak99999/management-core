@@ -1,0 +1,12 @@
+# Daily nightly PG backup — 02:30 local time. Persistent=true so a missed
+# run (host was off) fires on next boot.
+[Unit]
+Description=Nightly Lumaara PostgreSQL backup
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+Unit=lumaara-pg-backup.service
+
+[Install]
+WantedBy=timers.target

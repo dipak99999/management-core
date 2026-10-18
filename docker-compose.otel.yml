@@ -1,0 +1,111 @@
+# Dev-mode observability stack. Boots Grafana Tempo (traces), Loki (logs),
+# Prometheus (metrics) + an OTel collector that fans out to all three.
+# Grafana ships pre-provisioned with datasources for all three.
+#
+# Layer this on top of the dev compose:
+#   docker compose -f docker-compose.yml -f docker-compose.otel.yml up
+#
+# Then browse http://localhost:3200 for Grafana (anonymous, admin).
+# The overlay sets OTEL_EXPORTER_OTLP_ENDPOINT on every service so
+# initOtel() (packages/service-auth/src/otel.ts) picks it up automatically.
+#
+# All storage is ephemeral (tmpfs / anonymous volume) so a `down` wipes it.
+# Fine for dev; prod uses managed Tempo/Loki + real retention policies.
+
+services:
+  # ── OTel collector (contrib image, has all receivers/exporters) ──
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.115.0
+    restart: unless-stopped
+    command: ["--config=/etc/otel-config.yaml"]
+    volumes:
+      - ./infra/otel/collector-config.yaml:/etc/otel-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    depends_on:
+      - tempo
+      - loki
+      - prometheus
+
+  # ── Tempo — distributed traces ──
+  tempo:
+    image: grafana/tempo:2.6.1
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./infra/otel/tempo-config.yaml:/etc/tempo.yaml:ro
+    ports:
+      - "3200:3200"   # Tempo HTTP
+      - "9411:9411"   # Zipkin (compat)
+
+  # ── Loki — logs ──
+  loki:
+    image: grafana/loki:3.3.2
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    ports:
+      - "3100:3100"
+
+  # ── Prometheus — metrics ──
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=6h"
+    volumes:
+      - ./infra/otel/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  # ── Grafana — one dashboard, pre-provisioned datasources ──
+  grafana:
+    image: grafana/grafana:11.4.0
+    restart: unless-stopped
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./infra/otel/grafana-provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3300:3000"
+    depends_on:
+      - tempo
+      - loki
+      - prometheus
+
+  # ── Point every Lumaara service at the collector ──
+  auth-service:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+
+  accounting-service:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+
+  crm-service:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+
+  hr-service:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+
+  stock-service:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+
+  projects-service:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+
+  scheduler:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+
+  mcp-server:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318

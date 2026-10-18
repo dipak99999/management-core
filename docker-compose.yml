@@ -1,0 +1,223 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lumaara
+      POSTGRES_PASSWORD: lumaara
+      POSTGRES_DB: lumaara
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lumaara"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: auth-service
+    environment:
+      DATABASE_URL: postgresql://lumaara:lumaara@postgres:5432/lumaara?schema=public
+      JWT_SECRET: change-me-in-production-please
+      JWT_EXPIRES_IN: 7d
+      PORT: 4001
+      # Phase F: email queue processor (leave unset for stdout fake mode).
+      SMTP_HOST: ""
+      SMTP_PORT: "587"
+      SMTP_FROM: no-reply@example.com
+      # Phase K: portal auth secret + link base.
+      PORTAL_JWT_SECRET: change-portal-secret-please
+      PORTAL_PUBLIC_URL: http://localhost:3007
+    ports:
+      - "4001:4001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "wget -q -O- http://localhost:4001/health/ready || exit 1"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  accounting-service:
+    build:
+      context: .
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: accounting-service
+    environment:
+      DATABASE_URL: postgresql://lumaara:lumaara@postgres:5432/lumaara?schema=public
+      JWT_SECRET: change-me-in-production-please
+      PORT: 4002
+      PORTAL_JWT_SECRET: change-portal-secret-please
+      # Phase M: pg_dump backup output directory.
+      BACKUP_DIR: /var/lumaara/backups
+      APP_VERSION: dev
+      # Async queues (unset REDIS_URL to run in inline mode; imports become synchronous again).
+      REDIS_URL: redis://redis:6379
+      # OpenTelemetry — leave endpoint unset to disable OTEL entirely.
+      # OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: accounting-service
+    ports:
+      - "4002:4002"
+    volumes:
+      - backups:/var/lumaara/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "wget -q -O- http://localhost:4002/health/ready || exit 1"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  stock-service:
+    build:
+      context: .
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: stock-service
+    environment:
+      DATABASE_URL: postgresql://lumaara:lumaara@postgres:5432/lumaara?schema=public
+      JWT_SECRET: change-me-in-production-please
+      PORT: 4003
+    ports:
+      - "4003:4003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "wget -q -O- http://localhost:4003/health/ready || exit 1"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  crm-service:
+    build:
+      context: .
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: crm-service
+    environment:
+      DATABASE_URL: postgresql://lumaara:lumaara@postgres:5432/lumaara?schema=public
+      JWT_SECRET: change-me-in-production-please
+      PORT: 4004
+    ports:
+      - "4004:4004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "wget -q -O- http://localhost:4004/health/ready || exit 1"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  hr-service:
+    build:
+      context: .
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: hr-service
+    environment:
+      DATABASE_URL: postgresql://lumaara:lumaara@postgres:5432/lumaara?schema=public
+      JWT_SECRET: change-me-in-production-please
+      PORT: 4005
+    ports:
+      - "4005:4005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "wget -q -O- http://localhost:4005/health/ready || exit 1"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  projects-service:
+    build:
+      context: .
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: projects-service
+    environment:
+      DATABASE_URL: postgresql://lumaara:lumaara@postgres:5432/lumaara?schema=public
+      JWT_SECRET: change-me-in-production-please
+      PORT: 4006
+      OTEL_SERVICE_NAME: projects-service
+    ports:
+      - "4006:4006"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "wget -q -O- http://localhost:4006/health/ready || exit 1"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: scheduler
+    environment:
+      DATABASE_URL: postgresql://lumaara:lumaara@postgres:5432/lumaara?schema=public
+      JWT_SECRET: change-me-in-production-please
+      PORT: 4009
+      REDIS_URL: redis://redis:6379
+      OTEL_SERVICE_NAME: scheduler
+      # SCHEDULER_API_TOKEN required for HTTP-fanout jobs (defined via CRON_HTTP_JOBS).
+    ports:
+      - "4009:4009"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "wget -q -O- http://localhost:4009/health/ready || exit 1"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  pgdata:
+  backups:
+  redisdata:

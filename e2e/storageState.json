@@ -1,0 +1,68 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:3106",
+      "localStorage": [
+        {
+          "name": "lumaara.session",
+          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXN5ZzB3djIwMDAxMngyeXE1OXhuOHM4IiwidGVuYW50SWQiOiJjbXN4Zndmb3EwMDAwZHRudTVwbXdxNzh0IiwiZW1haWwiOiJkZW1vQGx1bWFhcmEubG9jYWwiLCJyb2xlIjoiYWRtaW4iLCJyb2xlcyI6W10sImp0aSI6ImZmZDFkMjQ5LTAwMDctNDk3ZS05YzA2LTRjNWUyODY4NGM3NCIsImlhdCI6MTc4NzI1MDUxNCwiZXhwIjoxNzg3ODU1MzE0fQ.OCcYnfPaJl4bhVksNH_yj9NnuAK7Ycn2hmjmJGapoYY\",\"tenant\":{\"id\":\"cmsxfwfoq0000dtnu5pmwq78t\",\"name\":\"Demo Company\",\"slug\":\"demo\"},\"user\":{\"id\":\"cmsyg0wv200012x2yq59xn8s8\",\"email\":\"demo@lumaara.local\",\"fullName\":\"Demo Admin\",\"role\":\"admin\",\"roles\":[]}}"
+        }
+      ]
+    },
+    {
+      "origin": "http://localhost:3100",
+      "localStorage": [
+        {
+          "name": "lumaara.session",
+          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXN5ZzB3djIwMDAxMngyeXE1OXhuOHM4IiwidGVuYW50SWQiOiJjbXN4Zndmb3EwMDAwZHRudTVwbXdxNzh0IiwiZW1haWwiOiJkZW1vQGx1bWFhcmEubG9jYWwiLCJyb2xlIjoiYWRtaW4iLCJyb2xlcyI6W10sImp0aSI6ImZmZDFkMjQ5LTAwMDctNDk3ZS05YzA2LTRjNWUyODY4NGM3NCIsImlhdCI6MTc4NzI1MDUxNCwiZXhwIjoxNzg3ODU1MzE0fQ.OCcYnfPaJl4bhVksNH_yj9NnuAK7Ycn2hmjmJGapoYY\",\"tenant\":{\"id\":\"cmsxfwfoq0000dtnu5pmwq78t\",\"name\":\"Demo Company\",\"slug\":\"demo\"},\"user\":{\"id\":\"cmsyg0wv200012x2yq59xn8s8\",\"email\":\"demo@lumaara.local\",\"fullName\":\"Demo Admin\",\"role\":\"admin\",\"roles\":[]}}"
+        }
+      ]
+    },
+    {
+      "origin": "http://localhost:3101",
+      "localStorage": [
+        {
+          "name": "lumaara.session",
+          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXN5ZzB3djIwMDAxMngyeXE1OXhuOHM4IiwidGVuYW50SWQiOiJjbXN4Zndmb3EwMDAwZHRudTVwbXdxNzh0IiwiZW1haWwiOiJkZW1vQGx1bWFhcmEubG9jYWwiLCJyb2xlIjoiYWRtaW4iLCJyb2xlcyI6W10sImp0aSI6ImZmZDFkMjQ5LTAwMDctNDk3ZS05YzA2LTRjNWUyODY4NGM3NCIsImlhdCI6MTc4NzI1MDUxNCwiZXhwIjoxNzg3ODU1MzE0fQ.OCcYnfPaJl4bhVksNH_yj9NnuAK7Ycn2hmjmJGapoYY\",\"tenant\":{\"id\":\"cmsxfwfoq0000dtnu5pmwq78t\",\"name\":\"Demo Company\",\"slug\":\"demo\"},\"user\":{\"id\":\"cmsyg0wv200012x2yq59xn8s8\",\"email\":\"demo@lumaara.local\",\"fullName\":\"Demo Admin\",\"role\":\"admin\",\"roles\":[]}}"
+        }
+      ]
+    },
+    {
+      "origin": "http://localhost:3102",
+      "localStorage": [
+        {
+          "name": "lumaara.session",
+          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXN5ZzB3djIwMDAxMngyeXE1OXhuOHM4IiwidGVuYW50SWQiOiJjbXN4Zndmb3EwMDAwZHRudTVwbXdxNzh0IiwiZW1haWwiOiJkZW1vQGx1bWFhcmEubG9jYWwiLCJyb2xlIjoiYWRtaW4iLCJyb2xlcyI6W10sImp0aSI6ImZmZDFkMjQ5LTAwMDctNDk3ZS05YzA2LTRjNWUyODY4NGM3NCIsImlhdCI6MTc4NzI1MDUxNCwiZXhwIjoxNzg3ODU1MzE0fQ.OCcYnfPaJl4bhVksNH_yj9NnuAK7Ycn2hmjmJGapoYY\",\"tenant\":{\"id\":\"cmsxfwfoq0000dtnu5pmwq78t\",\"name\":\"Demo Company\",\"slug\":\"demo\"},\"user\":{\"id\":\"cmsyg0wv200012x2yq59xn8s8\",\"email\":\"demo@lumaara.local\",\"fullName\":\"Demo Admin\",\"role\":\"admin\",\"roles\":[]}}"
+        }
+      ]
+    },
+    {
+      "origin": "http://localhost:3103",
+      "localStorage": [
+        {
+          "name": "lumaara.session",
+          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXN5ZzB3djIwMDAxMngyeXE1OXhuOHM4IiwidGVuYW50SWQiOiJjbXN4Zndmb3EwMDAwZHRudTVwbXdxNzh0IiwiZW1haWwiOiJkZW1vQGx1bWFhcmEubG9jYWwiLCJyb2xlIjoiYWRtaW4iLCJyb2xlcyI6W10sImp0aSI6ImZmZDFkMjQ5LTAwMDctNDk3ZS05YzA2LTRjNWUyODY4NGM3NCIsImlhdCI6MTc4NzI1MDUxNCwiZXhwIjoxNzg3ODU1MzE0fQ.OCcYnfPaJl4bhVksNH_yj9NnuAK7Ycn2hmjmJGapoYY\",\"tenant\":{\"id\":\"cmsxfwfoq0000dtnu5pmwq78t\",\"name\":\"Demo Company\",\"slug\":\"demo\"},\"user\":{\"id\":\"cmsyg0wv200012x2yq59xn8s8\",\"email\":\"demo@lumaara.local\",\"fullName\":\"Demo Admin\",\"role\":\"admin\",\"roles\":[]}}"
+        }
+      ]
+    },
+    {
+      "origin": "http://localhost:3104",
+      "localStorage": [
+        {
+          "name": "lumaara.session",
+          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXN5ZzB3djIwMDAxMngyeXE1OXhuOHM4IiwidGVuYW50SWQiOiJjbXN4Zndmb3EwMDAwZHRudTVwbXdxNzh0IiwiZW1haWwiOiJkZW1vQGx1bWFhcmEubG9jYWwiLCJyb2xlIjoiYWRtaW4iLCJyb2xlcyI6W10sImp0aSI6ImZmZDFkMjQ5LTAwMDctNDk3ZS05YzA2LTRjNWUyODY4NGM3NCIsImlhdCI6MTc4NzI1MDUxNCwiZXhwIjoxNzg3ODU1MzE0fQ.OCcYnfPaJl4bhVksNH_yj9NnuAK7Ycn2hmjmJGapoYY\",\"tenant\":{\"id\":\"cmsxfwfoq0000dtnu5pmwq78t\",\"name\":\"Demo Company\",\"slug\":\"demo\"},\"user\":{\"id\":\"cmsyg0wv200012x2yq59xn8s8\",\"email\":\"demo@lumaara.local\",\"fullName\":\"Demo Admin\",\"role\":\"admin\",\"roles\":[]}}"
+        }
+      ]
+    },
+    {
+      "origin": "http://localhost:3105",
+      "localStorage": [
+        {
+          "name": "lumaara.session",
+          "value": "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXN5ZzB3djIwMDAxMngyeXE1OXhuOHM4IiwidGVuYW50SWQiOiJjbXN4Zndmb3EwMDAwZHRudTVwbXdxNzh0IiwiZW1haWwiOiJkZW1vQGx1bWFhcmEubG9jYWwiLCJyb2xlIjoiYWRtaW4iLCJyb2xlcyI6W10sImp0aSI6ImZmZDFkMjQ5LTAwMDctNDk3ZS05YzA2LTRjNWUyODY4NGM3NCIsImlhdCI6MTc4NzI1MDUxNCwiZXhwIjoxNzg3ODU1MzE0fQ.OCcYnfPaJl4bhVksNH_yj9NnuAK7Ycn2hmjmJGapoYY\",\"tenant\":{\"id\":\"cmsxfwfoq0000dtnu5pmwq78t\",\"name\":\"Demo Company\",\"slug\":\"demo\"},\"user\":{\"id\":\"cmsyg0wv200012x2yq59xn8s8\",\"email\":\"demo@lumaara.local\",\"fullName\":\"Demo Admin\",\"role\":\"admin\",\"roles\":[]}}"
+        }
+      ]
+    }
+  ]
+}

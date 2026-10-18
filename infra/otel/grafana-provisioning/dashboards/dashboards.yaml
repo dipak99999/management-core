@@ -1,0 +1,17 @@
+apiVersion: 1
+
+# Auto-provision every JSON dashboard dropped into this directory. New
+# dashboards show up on grafana restart (or `/api/admin/provisioning/
+# dashboards/reload`). Edits made in the UI are NOT persisted here —
+# commit JSON changes directly in the repo.
+
+providers:
+  - name: lumaara-dashboards
+    orgId: 1
+    folder: Lumaara
+    type: file
+    disableDeletion: false
+    editable: true
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

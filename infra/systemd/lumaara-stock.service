@@ -1,0 +1,53 @@
+# Lumaara stock-service unit. Deploy at /etc/systemd/system/lumaara-auth.service.
+# See infra/systemd/README.md for the full unit set + install steps.
+[Unit]
+Description=Lumaara stock-service
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=lumaara
+Group=lumaara
+WorkingDirectory=/opt/lumaara/services/stock-service
+# Sourced secrets: chmod 600 /etc/lumaara/env, owner=lumaara. Every unit
+# reads the same file so a secret rotation is one edit + one restart.
+EnvironmentFile=/etc/lumaara/env
+Environment=PORT=4003
+Environment=NODE_ENV=production
+# Workspace packages ship source TS — `pnpm start` = tsx src/index.ts.
+# See infra/systemd/README.md for why we can't ship compiled JS today.
+ExecStart=/usr/bin/pnpm --filter @lumaara/stock-service start
+# Block `systemctl start` from returning until /health/ready answers 200.
+ExecStartPost=/opt/lumaara/infra/systemd/wait-ready.sh 4003 60
+
+# Restart discipline. `on-failure` skips clean exits (SIGTERM = graceful
+# shutdown → don't restart). Backoff prevents tight-crash loops on
+# misconfigured secrets: 3 crashes in 5min → hold off 30s.
+Restart=on-failure
+RestartSec=5
+StartLimitBurst=3
+StartLimitIntervalSec=300
+
+# journald captures every stdout/stderr line. Our JSON structured logger
+# already writes single-line JSON — journalctl -o cat -u lumaara-auth
+# produces clean grep-friendly output.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lumaara-stock
+
+# Filesystem lockdown: service can only write to its own dir + backups.
+# Prevents a compromised process from touching /etc or /home.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lumaara/backups /var/log/lumaara /opt/lumaara/services/stock-service/.next-cache
+
+# Graceful shutdown window matches installGracefulShutdown's drain time
+# (15s in mcp-server, similar elsewhere).
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=lumaara.target

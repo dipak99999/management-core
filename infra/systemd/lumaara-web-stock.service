@@ -1,0 +1,38 @@
+# Lumaara shell (Next.js host app). Deploy at /etc/systemd/system/.
+#
+# Web apps run from Next.js standalone bundles — no tsx needed. Build once,
+# ship the .next/standalone directory. See infra/systemd/README.md.
+[Unit]
+Description=Lumaara stock-web (Next.js)
+After=network.target lumaara-auth.service
+Wants=lumaara-auth.service
+
+[Service]
+Type=simple
+User=lumaara
+Group=lumaara
+WorkingDirectory=/opt/lumaara/apps/stock-web/.next/standalone
+EnvironmentFile=/etc/lumaara/env
+Environment=PORT=3003
+Environment=HOSTNAME=127.0.0.1
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node apps/stock-web/server.js
+
+Restart=on-failure
+RestartSec=5
+StartLimitBurst=3
+StartLimitIntervalSec=300
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lumaara-web-stock
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+TimeoutStopSec=15
+
+[Install]
+WantedBy=lumaara.target

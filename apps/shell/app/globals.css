@@ -1,0 +1,446 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Lumaara design system — cream canvas, deep navy ink, gold accent.
+   Every app copies this file so its Next process bundles the same styles.
+   See tailwind.config.ts for the underlying color palette. */
+
+html, body { height: 100%; }
+body {
+  @apply bg-canvas text-ink antialiased;
+  font-family: var(--font-sans), InterVariable, Inter, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-synthesis: none;
+}
+
+/* Serif wordmark used for LUMAARA logo. next/font sets --font-serif in
+   apps that wire Playfair Display through the root layout; falls back to
+   Georgia otherwise. */
+.font-wordmark {
+  font-family: var(--font-serif), "Playfair Display", Georgia, "Times New Roman", serif;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────── */
+.btn {
+  @apply inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg
+         text-sm font-medium tracking-tight
+         transition-all duration-150 ease-out
+         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gold-400
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+.btn-primary,
+.btn-brand {
+  @apply btn bg-ink text-white hover:bg-ink-soft shadow-pill;
+}
+.btn-secondary {
+  @apply btn bg-white text-ink border border-ink/10
+         hover:border-ink/25 hover:bg-canvas-warm;
+}
+.btn-ghost {
+  @apply btn bg-transparent text-ink-soft hover:bg-canvas-warm;
+}
+.btn-danger {
+  @apply btn bg-white text-red-600 border border-red-200 hover:bg-red-50;
+}
+.btn-sm { @apply px-2.5 py-1.5 text-xs rounded-md; }
+.btn-lg { @apply px-4 py-2.5 text-base; }
+
+/* Icon-square used in page-headers and KPI cards.
+   Dark navy square with a gold-tinted glyph inside. */
+.icon-square {
+  @apply h-11 w-11 rounded-xl bg-ink text-gold-300 grid place-items-center;
+}
+.icon-square-soft {
+  @apply h-11 w-11 rounded-xl bg-wash-cream text-gold-700 grid place-items-center;
+}
+
+/* ─── Cards ──────────────────────────────────────────────────────────── */
+.card {
+  @apply bg-white rounded-2xl border border-ink/8 shadow-card;
+}
+.card-hover {
+  @apply card transition-all duration-150 hover:shadow-raised hover:-translate-y-0.5;
+}
+.card-header {
+  @apply flex items-center justify-between px-6 py-4 border-b border-ink/8;
+}
+.card-body { @apply p-6; }
+.card-tight { @apply p-4; }
+
+/* KPI wash tiles — subtle tinted cards like the dashboard grid */
+.kpi { @apply rounded-2xl p-5 border border-ink/8; }
+.kpi-cream  { @apply kpi bg-wash-cream/60; }
+.kpi-sage   { @apply kpi bg-wash-sage/60; }
+.kpi-mist   { @apply kpi bg-wash-mist/50; }
+.kpi-rose   { @apply kpi bg-wash-rose/60; }
+.kpi-lilac  { @apply kpi bg-wash-lilac/50; }
+
+/* ─── Inputs ─────────────────────────────────────────────────────────── */
+.input {
+  @apply w-full rounded-xl border border-ink/12 bg-white
+         px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint
+         focus:outline-none focus:border-ink/40 focus:ring-2 focus:ring-gold-100
+         transition-colors;
+}
+.input-sm { @apply px-2.5 py-1.5 text-xs rounded-lg; }
+.label { @apply block text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5; }
+
+/* ─── Tables ─────────────────────────────────────────────────────────── */
+.table {
+  @apply w-full text-sm text-start;
+}
+.table thead {
+  @apply text-ink-muted;
+}
+.table thead th {
+  @apply px-4 py-3 text-[11px] font-semibold uppercase tracking-widest
+         border-b border-ink/8;
+}
+.table tbody tr {
+  @apply border-b border-ink/6 hover:bg-canvas-warm transition-colors;
+}
+.table tbody tr:last-child { @apply border-b-0; }
+.table tbody td { @apply px-4 py-3.5; }
+.table-wrap { @apply card overflow-hidden; }
+
+/* ─── Badges & pills ─────────────────────────────────────────────────── */
+/* Badges are the inline-tag variants (compact, rounded corners). Use `.chip`
+   for the larger table status pills. Both aliases render identically on the
+   canvas so legacy pages keep the same feel as the reference screenshots. */
+.badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-pill
+         text-[11px] font-semibold uppercase tracking-widest whitespace-nowrap;
+}
+.badge-gray  { @apply badge bg-ink/8 text-ink-soft; }
+.badge-brand { @apply badge bg-white border border-gold-300 text-gold-800; }
+.badge-gold  { @apply badge bg-white border border-gold-300 text-gold-800; }
+.badge-green { @apply badge bg-success-soft text-success; }
+.badge-amber { @apply badge bg-amber-100 text-amber-800; }
+.badge-red   { @apply badge bg-red-100 text-red-700; }
+.badge-blue  { @apply badge bg-blue-100 text-blue-800; }
+.badge-violet{ @apply badge bg-wash-lilac text-ink-soft; }
+.badge-navy  { @apply badge bg-ink text-white; }
+
+/* Status chips — the rounded pills seen inside table cells in the reference
+   screenshots (ADVANCE / ACCEPTED / PENDING RESERVE / FABRIC). Distinct
+   from `.badge-*` which is a smaller inline tag. */
+.chip {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill
+         text-[11px] font-semibold uppercase tracking-widest whitespace-nowrap;
+}
+.chip-outline-gold {
+  @apply chip bg-white border border-gold-300 text-gold-800;
+}
+.chip-solid-navy {
+  @apply chip bg-ink text-white;
+}
+.chip-solid-green {
+  @apply chip bg-success-soft text-success;
+}
+.chip-solid-gray {
+  @apply chip bg-ink/8 text-ink-soft;
+}
+.chip-solid-amber {
+  @apply chip bg-amber-100 text-amber-800;
+}
+.chip-solid-red {
+  @apply chip bg-red-100 text-red-700;
+}
+.chip-solid-blue {
+  @apply chip bg-blue-100 text-blue-800;
+}
+
+/* Column-sort chevron used inside table headers (⇅) */
+.sort-icon {
+  @apply inline-flex text-ink-faint hover:text-ink-muted transition ms-1 align-middle;
+}
+
+/* Filter chip / pill toggles (ALL · DRAFT · SENT ...) */
+.pill {
+  @apply inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-pill
+         text-[11px] font-semibold uppercase tracking-widest
+         border border-transparent text-ink-muted
+         hover:text-ink transition;
+}
+.pill-active {
+  @apply pill bg-ink text-white;
+}
+.pill-outline {
+  @apply pill border-ink/12 text-ink;
+}
+.pill-gold {
+  @apply pill bg-gold-100 border-gold-200 text-gold-800;
+}
+
+/* ─── Page header (icon-square + title + subtitle + actions) ─────────── */
+.page-header {
+  @apply flex flex-wrap items-start justify-between gap-4 mb-6;
+}
+.page-header-lead {
+  @apply flex items-start gap-4 min-w-0;
+}
+.page-eyebrow {
+  @apply text-[11px] font-semibold uppercase tracking-widest text-ink-muted;
+}
+.page-title {
+  @apply text-[32px] leading-[1.1] font-semibold tracking-tight text-ink;
+}
+.page-subtitle {
+  @apply text-sm text-ink-muted mt-1.5 max-w-xl;
+}
+
+/* Section title used inside cards for grouped content */
+.section-title {
+  @apply text-sm font-semibold uppercase tracking-widest text-ink-muted;
+}
+
+/* ─── Sidebar nav ────────────────────────────────────────────────────── */
+.nav-link {
+  @apply flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium
+         text-ink-soft transition-colors relative;
+}
+.nav-link:hover {
+  @apply bg-canvas-warm text-ink;
+}
+.nav-link-active {
+  @apply nav-link bg-ink text-white shadow-pill;
+}
+.nav-link-active::before {
+  content: "";
+  @apply absolute start-[-6px] top-1/2 -translate-y-1/2 h-6 w-1 rounded-e-full bg-gold-400;
+}
+.nav-link-active .nav-dot { @apply bg-gold-400; }
+.nav-dot {
+  @apply ms-auto h-1.5 w-1.5 rounded-full bg-transparent;
+}
+.nav-group {
+  @apply pt-4 pb-1;
+}
+.nav-group-label {
+  @apply flex items-center gap-1.5 px-2 pb-2
+         text-[11px] font-semibold uppercase tracking-widest text-gold-700;
+}
+.nav-group-caret {
+  @apply text-gold-600;
+}
+
+/* ─── Stats ──────────────────────────────────────────────────────────── */
+.stat-value {
+  @apply text-3xl font-semibold text-ink tracking-tight tabular-nums;
+}
+.stat-label {
+  @apply text-[11px] font-semibold uppercase tracking-widest text-ink-muted;
+}
+.stat-delta { @apply text-xs font-semibold tabular-nums; }
+.stat-delta-up { @apply text-success; }
+.stat-delta-down { @apply text-red-600; }
+
+/* ─── Empty state ────────────────────────────────────────────────────── */
+.empty-state {
+  @apply flex flex-col items-center justify-center py-16 px-6 text-center;
+}
+.empty-state-icon {
+  @apply h-14 w-14 rounded-2xl bg-canvas-warm grid place-items-center text-gold-700 mb-4;
+}
+.empty-state-title { @apply text-base font-semibold text-ink; }
+.empty-state-desc { @apply text-sm text-ink-muted mt-1 max-w-xs; }
+
+/* ─── Layout chrome ──────────────────────────────────────────────────── */
+.app-hairline {
+  @apply h-px w-full bg-ink/8;
+}
+
+.app-topbar {
+  @apply fixed top-0 start-0 md:start-60 end-0 h-16 z-30
+         bg-canvas/95 backdrop-blur border-b border-ink/8;
+}
+/* Sidebar: fixed drawer on mobile (off-canvas by default), docked on md+.
+   Toggle via `html.sidebar-open` class set by the hamburger button. */
+.app-sidebar {
+  @apply fixed top-0 bottom-0 start-0 w-60 z-40
+         bg-canvas border-e border-ink/8 flex flex-col
+         -translate-x-full md:translate-x-0 transition-transform;
+}
+html.sidebar-open .app-sidebar { @apply translate-x-0; }
+/* Backdrop behind the open mobile drawer. Click to close. */
+.app-sidebar-backdrop {
+  @apply fixed inset-0 bg-ink/40 z-30 md:hidden
+         opacity-0 pointer-events-none transition-opacity;
+}
+html.sidebar-open .app-sidebar-backdrop {
+  @apply opacity-100 pointer-events-auto;
+}
+.app-sidebar-scroll {
+  @apply flex-1 overflow-y-auto px-3 pt-3;
+}
+.app-sidebar-footer {
+  @apply px-3 py-2.5 border-t border-ink/8 flex items-center gap-3;
+}
+.app-main { @apply ms-0 md:ms-60 pt-16 min-h-screen pb-6; }
+.app-content { @apply px-4 md:px-8 py-6 max-w-[1600px] mx-auto; }
+
+.app-sidebar-scroll::-webkit-scrollbar { width: 6px; }
+.app-sidebar-scroll::-webkit-scrollbar-thumb { @apply bg-ink/15 rounded; }
+.app-sidebar-scroll::-webkit-scrollbar-thumb:hover { @apply bg-ink/30; }
+
+/* Bottom-left LIVE pill in sidebar footer */
+.live-pill {
+  @apply inline-flex items-center gap-1.5 ps-1.5 pe-2.5 py-1 rounded-pill
+         bg-white border border-ink/10
+         text-[11px] font-semibold uppercase tracking-widest text-ink-soft;
+}
+.live-dot {
+  @apply h-2 w-2 rounded-full bg-success animate-pulse-dot;
+}
+
+/* Bottom-right Online·Synced pill in Brew bar */
+.status-pill {
+  @apply inline-flex items-center gap-1.5 ps-2 pe-3 py-1.5 rounded-pill
+         bg-success-soft text-success text-xs font-semibold;
+}
+
+/* Brew ask-anything wordmark */
+.brew-mark {
+  @apply font-wordmark text-brew text-xl;
+}
+
+/* Top bar search input */
+.topbar-search {
+  @apply flex items-center gap-2 w-80 h-10 px-3.5 rounded-xl bg-white
+         border border-ink/8 focus-within:border-ink/25 transition;
+}
+.topbar-chip {
+  @apply inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-white
+         border border-ink/8 hover:border-ink/20 text-sm text-ink transition;
+}
+.topbar-chip-gold {
+  @apply topbar-chip bg-gold-50/60 border-gold-200 text-gold-800;
+}
+
+/* ─── Palette variables ─────────────────────────────────────────────────
+   Semantic tokens that the Tailwind palette (`bg-canvas`, `text-ink`,
+   `border-ink/10`, etc.) resolves to via `rgb(var(--name) / <alpha>)`.
+   Flip the html.dark values to re-skin the whole product without
+   touching per-component styles. */
+
+:root {
+  /* Light (warm cream canvas, deep navy ink) */
+  --canvas: 251 247 238;        /* #FBF7EE */
+  --canvas-raised: 255 255 255; /* #FFFFFF */
+  --canvas-sunken: 244 238 223; /* #F4EEDF */
+  --canvas-warm: 247 241 225;   /* #F7F1E1 */
+  --ink: 15 20 32;              /* #0F1420 */
+  --ink-soft: 42 49 66;         /* #2A3142 */
+  --ink-muted: 90 100 115;      /* #5A6473 — WCAG AA 5.9:1 on canvas */
+  --ink-faint: 118 128 143;     /* #76808F — WCAG AA 4.5:1 on canvas */
+}
+
+html.dark {
+  color-scheme: dark;
+  --canvas: 11 17 32;           /* slate-900 */
+  --canvas-raised: 17 24 39;    /* gray-900 */
+  --canvas-sunken: 2 6 23;      /* slate-950 */
+  --canvas-warm: 15 23 42;      /* slate-900ish */
+  --ink: 229 231 235;           /* gray-200 */
+  --ink-soft: 203 213 225;      /* slate-300 */
+  --ink-muted: 148 163 184;     /* slate-400 — WCAG AA 6.2:1 on canvas-dark */
+  --ink-faint: 148 161 180;     /* lightened slate — WCAG AA 5.8:1 on canvas-dark */
+}
+
+/* Dark-mode spot-fixes for hard-coded white/cream surfaces that bypass
+   the Tailwind palette (shadcn-style components, external SVG defs,
+   etc.). Keep this list short — the right fix is to migrate those to
+   `bg-canvas-raised` / `bg-white` (which already resolves correctly). */
+html.dark .shadow-raised { box-shadow: 0 8px 24px -12px rgba(0,0,0,0.5); }
+html.dark .shadow-card   { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.3), 0 1px 3px 0 rgba(0,0,0,0.3); }
+
+/* Hard-coded colors that still need overriding in dark mode. The right
+   long-term fix is to migrate these to the semantic palette tokens
+   (`bg-canvas-raised` instead of `bg-white`), but there are hundreds of
+   call sites — spot-fix is fine for now. */
+html.dark .bg-white { background-color: rgb(var(--canvas-raised)) !important; }
+html.dark .app-sidebar,
+html.dark .app-topbar,
+html.dark .border-ink\/8,
+html.dark .border-ink\/10,
+html.dark .border-ink\/12 { border-color: rgba(255,255,255,0.08); }
+
+/* KPI washes in dark mode — the cream/sage/mist/rose/lilac pastels
+   collapse to indistinguishable grays over a dark surface. Rebuild with a
+   neutral raised card + a saturated 3px left accent so the five KPI
+   categories stay visually distinct without needing the tinted background. */
+html.dark .kpi-cream,
+html.dark .kpi-sage,
+html.dark .kpi-mist,
+html.dark .kpi-rose,
+html.dark .kpi-lilac {
+  background-color: rgb(var(--canvas-raised)) !important;
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+html.dark .kpi-cream { border-left-color: rgb(217 164 68); }    /* gold */
+html.dark .kpi-sage  { border-left-color: rgb(96 180 120); }    /* emerald */
+html.dark .kpi-mist  { border-left-color: rgb(96 150 220); }    /* sky */
+html.dark .kpi-rose  { border-left-color: rgb(220 120 140); }   /* rose */
+html.dark .kpi-lilac { border-left-color: rgb(170 130 220); }   /* violet */
+
+/* Lift subdued text inside tiles so values + labels are readable. */
+html.dark .kpi .stat-value { color: rgb(var(--ink)); }
+html.dark .stat-label      { color: rgba(255,255,255,0.65); }
+
+/* Badge pills — the light-100 backgrounds + mid-tone text are low-contrast
+   on dark surfaces. Rebuild with saturated backgrounds + white text so
+   status labels stay legible. */
+html.dark .badge-gray   { background-color: rgba(255,255,255,0.08) !important; color: rgba(255,255,255,0.75) !important; }
+html.dark .badge-brand,
+html.dark .badge-gold   { background-color: rgba(217,164,68,0.18) !important; border-color: rgba(217,164,68,0.4) !important; color: rgb(240,205,145) !important; }
+html.dark .badge-green  { background-color: rgba(96,180,120,0.18) !important; color: rgb(170,230,190) !important; }
+html.dark .badge-amber  { background-color: rgba(217,164,68,0.18) !important; color: rgb(240,205,145) !important; }
+html.dark .badge-red    { background-color: rgba(220,80,100,0.18) !important; color: rgb(240,160,170) !important; }
+html.dark .badge-blue   { background-color: rgba(96,150,220,0.18) !important; color: rgb(170,200,240) !important; }
+html.dark .badge-violet { background-color: rgba(170,130,220,0.18) !important; color: rgb(210,185,240) !important; }
+
+/* Buttons — btn-secondary / btn-ghost need their white backgrounds swapped
+   so they don't become invisible rectangles on the dark canvas. The
+   primary + brand buttons are already ink-black so they look fine. */
+html.dark .btn-secondary {
+  background-color: rgba(255,255,255,0.06) !important;
+  color: rgb(var(--ink)) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
+html.dark .btn-secondary:hover {
+  background-color: rgba(255,255,255,0.10) !important;
+  border-color: rgba(255,255,255,0.22) !important;
+}
+html.dark .btn-ghost {
+  color: rgba(255,255,255,0.75) !important;
+}
+html.dark .btn-ghost:hover {
+  background-color: rgba(255,255,255,0.06) !important;
+  color: rgb(var(--ink)) !important;
+}
+
+/* Form inputs — bg-white would turn to canvas-raised via the general rule
+   above, but focus rings use amber-100 which is nearly invisible. Lift
+   the focus ring to a saturated gold tint. */
+html.dark .input {
+  background-color: rgba(255,255,255,0.04) !important;
+  color: rgb(var(--ink)) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
+html.dark .input:focus {
+  border-color: rgba(217,164,68,0.6) !important;
+  box-shadow: 0 0 0 2px rgba(217,164,68,0.20) !important;
+}
+html.dark .input::placeholder { color: rgba(255,255,255,0.35) !important; }
+
+/* Topbar chips (Unlimited credits, ALL) — pop a bit against dark. */
+html.dark .topbar-chip,
+html.dark .topbar-chip-gold {
+  background-color: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}

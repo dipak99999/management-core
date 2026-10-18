@@ -1,0 +1,13 @@
+diff --git a/package.json b/package.json
+index b0b948076e01e2ca9748db895a4cce6e9a4c8a1e..2c87d68d256f39a29fe34c485dce13244b17e747 100644
+--- a/package.json
++++ b/package.json
+@@ -11,7 +11,7 @@
+     "release": "npx webpack --mode production && npx webpack --mode development"
+   },
+   "peerDependencies": {
+-    "echarts": "^5.0.1"
++    "echarts": "^5.0.1 || ^6.0.0"
+   },
+   "repository": {
+     "type": "git",

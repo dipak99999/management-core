@@ -1,0 +1,10 @@
+# Top-level target for the whole Lumaara stack. `systemctl start lumaara.target`
+# brings up every service; `systemctl stop lumaara.target` brings them down.
+[Unit]
+Description=Lumaara ERP stack (all services + frontends)
+Requires=lumaara-auth.service lumaara-accounting.service lumaara-crm.service lumaara-hr.service lumaara-projects.service lumaara-stock.service lumaara-scheduler.service lumaara-web-shell.service lumaara-web-accounting.service lumaara-web-buying.service lumaara-web-stock.service lumaara-web-crm.service lumaara-web-hr.service lumaara-web-projects.service lumaara-web-portal.service
+After=lumaara-migrate.service
+Wants=lumaara-migrate.service
+
+[Install]
+WantedBy=multi-user.target

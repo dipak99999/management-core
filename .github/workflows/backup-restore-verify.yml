@@ -1,0 +1,291 @@
+# Nightly (+ on-demand) backup + restore verification.
+#
+# Goal: prove that the backup we take of the production dataset can
+# actually be restored into an empty Postgres and the schema + data are
+# intact. Catches: missing `pg_dump` flags, corrupted archives, migration
+# drift, permission mismatches — before someone tries to use the backup
+# for real at 3am.
+#
+# What it does:
+#   1. Boot a scratch Postgres in the runner.
+#   2. `prisma migrate deploy` (baseline schema).
+#   3. Seed one tenant + reference data.
+#   4. `pnpm db:backup` → produce an archive.
+#   5. Wipe the DB.
+#   6. `pnpm db:restore` from the archive.
+#   7. Assert a known row count + one query.
+#
+# Runs nightly at 02:00 UTC + on any push touching the backup scripts.
+
+name: backup-restore-verify
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch: {}
+  push:
+    paths:
+      - "packages/db/scripts/backup.ts"
+      - "packages/db/scripts/restore.ts"
+      - "packages/db/src/backup.ts"
+      - "packages/db/prisma/schema.prisma"
+      - ".github/workflows/backup-restore-verify.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lumaara
+          POSTGRES_PASSWORD: lumaara
+          POSTGRES_DB: lumaara
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumaara"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgresql://lumaara:lumaara@localhost:5432/lumaara?schema=public
+      MASTER_SECRET_KEY: ci-only-master-secret-32chars-min-abc123
+      JWT_SECRET: ci-only-jwt-secret-32chars-min-abc123456
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node + pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install postgresql-client (pg_dump + psql)
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @lumaara/db exec prisma generate
+
+      - name: Apply migrations
+        run: pnpm --filter @lumaara/db exec prisma migrate deploy
+
+      - name: Seed the DB
+        run: |
+          pnpm --filter @lumaara/db exec tsx prisma/seed.ts
+          # Seed one demo tenant so backup has real data to protect
+          pnpm --filter @lumaara/db seed:agents demo || true
+
+      - name: Snapshot baseline counts
+        id: baseline
+        run: |
+          COUNT=$(psql "$DATABASE_URL" -tAc "SELECT count(*) FROM tenants")
+          echo "tenants=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "Baseline tenant count: $COUNT"
+
+      - name: Run backup
+        run: pnpm --filter @lumaara/db backup -- --output /tmp/backup.sql.gz
+
+      - name: Verify archive exists + non-empty
+        run: |
+          test -s /tmp/backup.sql.gz
+          ls -la /tmp/backup.sql.gz
+
+      - name: Wipe DB
+        run: |
+          psql "$DATABASE_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+
+      - name: Restore from backup
+        run: pnpm --filter @lumaara/db restore -- --input /tmp/backup.sql.gz
+
+      - name: Assert restore matches baseline
+        run: |
+          RESTORED=$(psql "$DATABASE_URL" -tAc "SELECT count(*) FROM tenants")
+          if [ "$RESTORED" != "${{ steps.baseline.outputs.tenants }}" ]; then
+            echo "MISMATCH: baseline=${{ steps.baseline.outputs.tenants }} restored=$RESTORED"
+            exit 1
+          fi
+          echo "✓ tenants match: $RESTORED rows"
+          # One canary query — checks a joined table survived the round-trip
+          psql "$DATABASE_URL" -c "SELECT count(*) AS accounts FROM accounts"
+
+      # Row counts match ≠ the app actually boots. This step proves the
+      # restored schema is consumable by the running Prisma client — catches
+      # cases where the backup preserved data but not extensions, sequences,
+      # or FK constraints Prisma expects.
+      - name: Prove auth-service can boot against the restored DB
+        env:
+          PORT: "4001"
+          PORTAL_JWT_SECRET: ci-only-portal-jwt-secret-32chars-min-abc
+          REDIS_URL: ""
+          NODE_ENV: production
+          TENANT_GUARD_MODE: warn
+          SIGNUP_REQUIRE_EMAIL_VERIFY: "0"
+        run: |
+          # Boot auth-service in the background, poll /health/ready.
+          pnpm --filter @lumaara/auth-service start > /tmp/auth.log 2>&1 &
+          PID=$!
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4001/health/ready 2>/dev/null | grep -q '"ok":true'; then
+              echo "✓ auth-service booted against restored DB in ${i}s"
+              kill $PID
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::auth-service failed to boot against restored DB"
+          tail -50 /tmp/auth.log
+          kill $PID
+          exit 1
+
+      # Forward-migration smoke: a real production restore scenario is
+      # "yesterday's backup + today's migrations." The baseline test above
+      # restores a same-schema backup, which doesn't exercise that path.
+      # Here we drop the schema again, restore the backup, then run
+      # `prisma migrate deploy` on top. On a fresh clone this is a no-op
+      # (backup has every migration row); the value is catching:
+      #   • migrations that reference extensions the restore flow drops
+      #   • migrations that assume data-shape the restore doesn't preserve
+      #   • unexpected drift between the committed migration set and the
+      #     DB state captured in the backup
+      #
+      # Any migration failure here points at either (a) the backup script
+      # or (b) a recently-added migration that isn't restore-safe. Both
+      # fixable, both pre-production.
+      - name: Forward-migrate the restored DB (idempotency smoke)
+        run: |
+          psql "$DATABASE_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+          pnpm --filter @lumaara/db restore -- --input /tmp/backup.sql.gz
+          pnpm --filter @lumaara/db exec prisma migrate deploy
+
+      - name: Report
+        if: always()
+        run: echo "::notice::Backup-restore verify complete."
+
+  # Second job: restore a backup taken against an OLDER migration state,
+  # then forward-apply today's migrations. Catches "I added a NOT NULL
+  # column but the existing data has no sensible default" bugs that the
+  # first job's same-state restore can't surface.
+  #
+  # Strategy: check out HEAD~ (the parent commit) just for the backup
+  # phase, then switch back to HEAD and apply new migrations on top.
+  # If HEAD~ touches no migrations the restore-replay is a no-op; if it
+  # does, this is the actual forward-migration test.
+  verify-forward-migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lumaara
+          POSTGRES_PASSWORD: lumaara
+          POSTGRES_DB: lumaara
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumaara"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgresql://lumaara:lumaara@localhost:5432/lumaara?schema=public
+      MASTER_SECRET_KEY: ci-only-master-secret-32chars-min-abc123
+      JWT_SECRET: ci-only-jwt-secret-32chars-min-abc123456
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need HEAD + at least HEAD~1 so we can roll back the working
+          # tree to the previous migration set, create a backup, then
+          # restore it on today's HEAD.
+          fetch-depth: 10
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - run: pnpm install --frozen-lockfile
+
+      - name: Capture current migration count
+        id: current
+        run: |
+          HEAD_MIGS=$(ls packages/db/prisma/migrations | grep -v migration_lock.toml | wc -l)
+          echo "current_migrations=$HEAD_MIGS" >> "$GITHUB_OUTPUT"
+
+      - name: Check out HEAD~ migrations only
+        run: |
+          # Compute HEAD~1 if a parent exists. In a single-commit PR this
+          # just no-ops below (migration count unchanged → nothing to
+          # verify, we still prove the restore flow works).
+          PARENT=$(git rev-parse HEAD~1 2>/dev/null || echo "")
+          if [ -z "$PARENT" ]; then
+            echo "::notice::No parent commit — skipping backward-migrate step."
+            exit 0
+          fi
+          # Snapshot the HEAD migrations directory, then overwrite with
+          # the parent's. We'll restore HEAD after the backup.
+          mv packages/db/prisma/migrations /tmp/head-migrations
+          git show "${PARENT}:packages/db/prisma/migrations" >/dev/null 2>&1 || true
+          git checkout "$PARENT" -- packages/db/prisma/migrations
+          echo "Parent migration count: $(ls packages/db/prisma/migrations | grep -v migration_lock.toml | wc -l)"
+
+      - name: Apply parent migrations
+        run: |
+          pnpm --filter @lumaara/db exec prisma generate
+          pnpm --filter @lumaara/db exec prisma migrate deploy
+
+      - name: Seed on parent schema
+        run: pnpm --filter @lumaara/db exec tsx prisma/seed.ts
+
+      - name: Backup the parent-state DB
+        run: pnpm --filter @lumaara/db backup -- --output /tmp/past.sql.gz
+
+      - name: Restore HEAD migrations
+        run: |
+          rm -rf packages/db/prisma/migrations
+          if [ -d /tmp/head-migrations ]; then
+            mv /tmp/head-migrations packages/db/prisma/migrations
+          else
+            # Single-commit case — HEAD migrations are the same as parent's.
+            git checkout HEAD -- packages/db/prisma/migrations
+          fi
+          pnpm --filter @lumaara/db exec prisma generate
+
+      - name: Wipe + restore parent backup
+        run: |
+          psql "$DATABASE_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+          pnpm --filter @lumaara/db restore -- --input /tmp/past.sql.gz
+
+      - name: Forward-migrate to HEAD
+        run: pnpm --filter @lumaara/db exec prisma migrate deploy
+
+      - name: Assert HEAD migrations are all applied
+        run: |
+          APPLIED=$(psql "$DATABASE_URL" -tAc "SELECT count(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL")
+          EXPECTED=${{ steps.current.outputs.current_migrations }}
+          echo "applied=$APPLIED expected=$EXPECTED"
+          if [ "$APPLIED" != "$EXPECTED" ]; then
+            echo "::error::Expected $EXPECTED applied migrations, found $APPLIED after forward-migrate from parent"
+            exit 1
+          fi

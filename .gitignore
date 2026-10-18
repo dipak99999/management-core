@@ -1,0 +1,25 @@
+node_modules
+.next
+dist
+.turbo
+.env
+.env.local
+*.log
+.DS_Store
+
+# Test / coverage artifacts (regenerable, often large; keeps commits lean)
+coverage/
+playwright-report/
+test-results/
+
+# Claude Code runtime state (per-user memory + session scratch)
+.claude/
+
+# Project docs (excluded by owner request)
+docs/
+# Local load-test baselines — captured by scripts/load-test-local.sh.
+# Per-machine .txt files aren't committed (they'd be machine-specific
+# noise). The single shared reference committed to the repo lives in
+# .perf/BASELINE.md — see that file for the update workflow.
+.perf/*
+!.perf/BASELINE.md

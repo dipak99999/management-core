@@ -1,0 +1,1484 @@
+[
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/signup",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/verify-email",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/dashboards",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/forgot-password",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/reset-password",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/todos",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/login",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/dashboards/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/dashboards/[id]/edit",
+    "dynamic": true
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/audit-logs",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/error-logs",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/tickets",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/broadcasts",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/email-templates",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/emails",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/feature-flags",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/letterheads",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/workflows",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/roles",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/portal-users",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/imports",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/compliance",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/integrations",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/system",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/gst-reports",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/scheduled-reports",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/oauth-clients",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/users",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/custom-fields",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/print-formats",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/webhooks",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/backups",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/users/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/imports/new",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/imports/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/roles/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/workflows/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/broadcasts/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/admin/tickets/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/oauth/consent",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/settings/api-tokens",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/settings/sessions",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/settings/digests",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/settings/two-factor",
+    "dynamic": false
+  },
+  {
+    "app": "shell",
+    "port": 3100,
+    "route": "/settings/notifications",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/customers",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/payments",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/currencies",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/journal-entries",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/territories",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/asset-categories",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/price-lists",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/sales-persons",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/tax-withholding-categories",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/pricing-rules",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/landed-cost-vouchers",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/subscriptions",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/customer-groups",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/coupon-codes",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/tax-templates",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/loyalty-programs",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/accounts",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/fiscal-years",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/budgets",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/bank-reconciliation",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/exchange-rates",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/items",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/assets",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/sales-invoices",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/sales-invoices/new",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/sales-invoices/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/reports/saved",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/reports/trial-balance",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/reports/general-ledger",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/reports/cash-flow",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/reports/builder",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/reports/balance-sheet",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/reports/profit-and-loss",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/assets/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/items/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/bank-reconciliation/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/bank-reconciliation/import",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/landed-cost-vouchers/new",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/landed-cost-vouchers/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/price-lists/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/journal-entries/new",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/journal-entries/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/payments/new",
+    "dynamic": false
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/payments/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "accounting-web",
+    "port": 3101,
+    "route": "/accounting/customers/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "buying-web",
+    "port": 3102,
+    "route": "/buying",
+    "dynamic": false
+  },
+  {
+    "app": "buying-web",
+    "port": 3102,
+    "route": "/buying/purchase-orders",
+    "dynamic": false
+  },
+  {
+    "app": "buying-web",
+    "port": 3102,
+    "route": "/buying/suppliers",
+    "dynamic": false
+  },
+  {
+    "app": "buying-web",
+    "port": 3102,
+    "route": "/buying/purchase-invoices",
+    "dynamic": false
+  },
+  {
+    "app": "buying-web",
+    "port": 3102,
+    "route": "/buying/purchase-invoices/new",
+    "dynamic": false
+  },
+  {
+    "app": "buying-web",
+    "port": 3102,
+    "route": "/buying/purchase-invoices/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "buying-web",
+    "port": 3102,
+    "route": "/buying/suppliers/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "buying-web",
+    "port": 3102,
+    "route": "/buying/purchase-orders/new",
+    "dynamic": false
+  },
+  {
+    "app": "buying-web",
+    "port": 3102,
+    "route": "/buying/purchase-orders/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/stock-reconciliations",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/workstations",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/work-orders",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/warehouses",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/bom-tools",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/serial-numbers",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/reorder-rules",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/quality-inspections",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/stock-entries",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/production-plans",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/quality-inspection-templates",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/purchase-receipts",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/material-requests",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/delivery-notes",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/boms",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/batches",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/job-cards",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/reports/stock-aging",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/reports/stock-balance",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/reports/abc-analysis",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/boms/new",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/boms/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/delivery-notes/new",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/delivery-notes/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/material-requests/new",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/material-requests/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/purchase-receipts/new",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/purchase-receipts/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/production-plans/new",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/production-plans/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/stock-entries/new",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/stock-entries/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/quality-inspections/new",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/warehouses/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/work-orders/new",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/work-orders/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/stock-reconciliations/new",
+    "dynamic": false
+  },
+  {
+    "app": "stock-web",
+    "port": 3103,
+    "route": "/stock/stock-reconciliations/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/attendance",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/payroll-entries",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/loans",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/holiday-lists",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/hr-masters",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/employee-advances",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/statutory-components",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/shift-types",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/expense-claims",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/leave-allocations",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/loan-types",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/leave-applications",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/salary-structures",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/attendance-regularizations",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/employee-checkins",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/leave-policies",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/dashboard",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/expense-claim-types",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/overtime-requests",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/leave-encashments",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/skills-certs",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/leave-types",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/job-openings",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/appraisals",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/training-events",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/onboarding",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/salary-slips",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/employees",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/employees/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/salary-slips/new",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/salary-slips/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/onboarding/templates",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/onboarding/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/training-events/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/appraisals/new",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/appraisals/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/job-applicants/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/job-openings/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/employee-advances/new",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/employee-advances/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/holiday-lists/new",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/holiday-lists/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/loans/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/payroll-entries/new",
+    "dynamic": false
+  },
+  {
+    "app": "hr-web",
+    "port": 3105,
+    "route": "/hr/payroll-entries/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "projects-web",
+    "port": 3106,
+    "route": "/projects",
+    "dynamic": false
+  },
+  {
+    "app": "projects-web",
+    "port": 3106,
+    "route": "/projects/timesheets",
+    "dynamic": false
+  },
+  {
+    "app": "projects-web",
+    "port": 3106,
+    "route": "/projects/tasks",
+    "dynamic": false
+  },
+  {
+    "app": "projects-web",
+    "port": 3106,
+    "route": "/projects/projects",
+    "dynamic": false
+  },
+  {
+    "app": "projects-web",
+    "port": 3106,
+    "route": "/projects/projects/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "projects-web",
+    "port": 3106,
+    "route": "/projects/timesheets/new",
+    "dynamic": false
+  },
+  {
+    "app": "projects-web",
+    "port": 3106,
+    "route": "/projects/timesheets/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "portal-web",
+    "port": 3107,
+    "route": "/portal",
+    "dynamic": false
+  },
+  {
+    "app": "portal-web",
+    "port": 3107,
+    "route": "/portal/settings",
+    "dynamic": false
+  },
+  {
+    "app": "portal-web",
+    "port": 3107,
+    "route": "/portal/tickets",
+    "dynamic": false
+  },
+  {
+    "app": "portal-web",
+    "port": 3107,
+    "route": "/portal/purchase-orders",
+    "dynamic": false
+  },
+  {
+    "app": "portal-web",
+    "port": 3107,
+    "route": "/portal/invoices",
+    "dynamic": false
+  },
+  {
+    "app": "portal-web",
+    "port": 3107,
+    "route": "/portal/statement",
+    "dynamic": false
+  },
+  {
+    "app": "portal-web",
+    "port": 3107,
+    "route": "/portal/dsr",
+    "dynamic": false
+  },
+  {
+    "app": "portal-web",
+    "port": 3107,
+    "route": "/portal/forgot-password",
+    "dynamic": false
+  },
+  {
+    "app": "portal-web",
+    "port": 3107,
+    "route": "/portal/quotations",
+    "dynamic": false
+  },
+  {
+    "app": "portal-web",
+    "port": 3107,
+    "route": "/portal/accept-invite",
+    "dynamic": false
+  },
+  {
+    "app": "portal-web",
+    "port": 3107,
+    "route": "/portal/login",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/activities",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/campaigns/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/campaigns",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/cliq",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/contact-lists/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/contact-lists",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/desk/canned",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/desk/inbox",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/desk/rules",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/desk/sla",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/desk/tickets/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/landing-pages/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/landing-pages",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/leads/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/leads",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/opportunities/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/opportunities",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/party-search",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/quotations/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/quotations/new",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/quotations",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/reports/sales-analytics",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/reports/so-fulfillment",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/sales-orders/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/sales-orders/new",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/sales-orders",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/salesiq/chats/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/salesiq/inbox",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/salesiq/settings",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/salesiq/visitors",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/sequences/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/sequences",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/social/accounts",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/social/calendar",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/social/composer",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/social/inbox",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/social/monitors",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/surveys/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/surveys",
+    "dynamic": false
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/web-forms/[id]",
+    "dynamic": true
+  },
+  {
+    "app": "crm-web",
+    "port": 3104,
+    "route": "/crm/web-forms",
+    "dynamic": false
+  }
+]

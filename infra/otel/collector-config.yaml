@@ -1,0 +1,43 @@
+# OTel collector — receives OTLP from Lumaara services, fans out to
+# Tempo (traces), Loki (logs), Prometheus (metrics).
+receivers:
+  otlp:
+    protocols:
+      grpc: { endpoint: 0.0.0.0:4317 }
+      http: { endpoint: 0.0.0.0:4318 }
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+  # Add deployment.environment=dev to every span so dashboards can filter.
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: dev
+        action: upsert
+
+exporters:
+  otlphttp/tempo:
+    endpoint: http://tempo:4318
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+  prometheus:
+    endpoint: 0.0.0.0:8889
+  debug:
+    verbosity: normal
+
+service:
+  pipelines:
+    traces:
+      receivers:  [otlp]
+      processors: [resource, batch]
+      exporters:  [otlphttp/tempo, debug]
+    metrics:
+      receivers:  [otlp]
+      processors: [resource, batch]
+      exporters:  [prometheus, debug]
+    logs:
+      receivers:  [otlp]
+      processors: [resource, batch]
+      exporters:  [loki, debug]

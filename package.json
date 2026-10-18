@@ -1,0 +1,59 @@
+{
+  "name": "lumaara",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:local": "bash scripts/dev-local.sh",
+    "dev:wait": "turbo run dev > /tmp/dev-stack.log 2>&1 & bash scripts/wait-for-dev-stack.sh && echo \"→ logs streaming to /tmp/dev-stack.log  (Ctrl-C the backgrounded turbo to stop)\" && wait",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "turbo run db:migrate",
+    "db:seed": "pnpm --filter @lumaara/db seed",
+    "db:seed:demo": "pnpm --filter @lumaara/db seed:demo",
+    "db:deploy": "pnpm --filter @lumaara/db db:deploy",
+    "bootstrap": "bash scripts/bootstrap.sh",
+    "bootstrap:reset": "bash scripts/bootstrap.sh --reset",
+    "prepare": "husky || true"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11",
+    "turbo": "^2.11.7",
+    "typescript": "^5.6.0"
+  },
+  "lint-staged": {
+    "apps/*/{app,components,lib,src}/**/*.{ts,tsx}": [
+      "sh -c 'app=$(echo \"$1\" | sed -E \"s|apps/([^/]+)/.*|\\1|\" | head -1); pnpm --filter @lumaara/$app exec eslint --max-warnings 0' --"
+    ],
+    "services/*/src/**/*.ts": [
+      "sh -c 'svc=$(echo \"$1\" | sed -E \"s|services/([^/]+)/.*|\\1|\" | head -1); pnpm --filter @lumaara/$svc exec tsc --noEmit' --"
+    ],
+    "packages/db/prisma/schema.prisma": [
+      "sh -c 'pnpm --filter @lumaara/db exec prisma validate && pnpm --filter @lumaara/db check:tenant-guard && pnpm --filter @lumaara/db check:tenant-index' --"
+    ]
+  },
+  "pnpm": {
+    "overrides": {
+      "tar": "^7.5.21",
+      "postcss": "^8.5.18",
+      "fast-uri": "^3.1.6",
+      "@types/node": "^22.7.0",
+      "hono": "^4.13.7",
+      "ip-address": "^10.7.1",
+      "braces": "^3.0.3",
+      "qs": "^6.16.0",
+      "vitest": "^4.1.11",
+      "@vitest/coverage-v8": "^4.1.11"
+    },
+    "patchedDependencies": {
+      "echarts-wordcloud@2.1.0": "patches/echarts-wordcloud@2.1.0.patch"
+    }
+  }
+}

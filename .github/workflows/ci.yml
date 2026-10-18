@@ -1,0 +1,340 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lumaara
+          POSTGRES_PASSWORD: lumaara
+          POSTGRES_DB: lumaara
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumaara"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://lumaara:lumaara@localhost:5432/lumaara?schema=public
+      JWT_SECRET: ci-jwt-secret
+      PORTAL_JWT_SECRET: ci-portal-secret
+      # Keep bcrypt cheap in CI; prod default is 12.
+      BCRYPT_COST: "4"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Prisma generate
+        run: pnpm --filter @lumaara/db exec prisma generate
+
+      - name: Prisma migrate (deploy)
+        run: pnpm --filter @lumaara/db exec prisma migrate deploy
+
+      # Migration drift check: fail CI if schema.prisma has diverged from
+      # the committed migration set. `migrate diff` against the just-migrated
+      # DB → schema file; --exit-code=1 on any difference. Catches the case
+      # where a dev edits schema.prisma but forgets `prisma migrate dev`.
+      - name: Migration drift check (schema.prisma matches migrations)
+        run: |
+          pnpm --filter @lumaara/db exec prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel packages/db/prisma/schema.prisma \
+            --exit-code || {
+              echo "::error::schema.prisma has diverged from the committed migrations. Run 'pnpm --filter @lumaara/db exec prisma migrate dev --name <describe-change>' and commit the result.";
+              exit 1;
+            }
+
+      # Tenant-guard drift check: fail CI if a tenant-scoped model has been
+      # added/renamed/removed in schema.prisma without updating the
+      # TENANT_SCOPED_MODELS set in packages/db/src/tenant-guard.ts. Prevents
+      # the guard from silently missing new models (which would otherwise
+      # allow cross-tenant leaks on set-returning queries).
+      - name: Tenant-guard model-list drift check
+        run: pnpm --filter @lumaara/db check:tenant-guard
+
+      # Tenant-index coverage: fail CI if a tenant-scoped model lacks an
+      # index starting with tenantId. A missing index on a hot table turns
+      # every per-tenant list query into a full table scan. The script
+      # recognises `tenantId @unique`, `@@id([tenantId, …])`, and
+      # `@@index([tenantId, …])` as coverage.
+      - name: Tenant-index coverage check
+        run: pnpm --filter @lumaara/db check:tenant-index
+
+      - name: DB package tests + coverage (thresholds enforced in vitest.config.ts)
+        run: pnpm --filter @lumaara/db test:coverage
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: packages/db/coverage/lcov.info
+          if-no-files-found: warn
+          retention-days: 14
+
+      # Service test suites — includes the real-DB integration tests that
+      # exercise tenant isolation on live prisma queries + the idempotency
+      # middleware. Vitest configs default to `lumaara_test`; here we let
+      # them use CI's `lumaara` DB instead (already migrated above).
+      - name: Service tests (unit + real-DB integration)
+        run: |
+          pnpm --filter @lumaara/service-auth test
+          pnpm --filter @lumaara/auth-service test
+          pnpm --filter @lumaara/crm-service test
+          pnpm --filter @lumaara/accounting-service test
+          pnpm --filter @lumaara/hr-service test
+          pnpm --filter @lumaara/projects-service test
+          pnpm --filter @lumaara/stock-service test
+          pnpm --filter @lumaara/scheduler test
+          pnpm --filter mcp-server test
+
+      - name: Typecheck all packages
+        run: pnpm -r --if-present typecheck
+
+      # Dependency CVE audit. Fails on `high` or `critical` severity so a
+      # dependency bump that introduces a known-exploitable path blocks the
+      # merge. Moderates are advisory (logged, not failing) — the backlog
+      # moves slowly in practice and gating on moderate flakes against npm
+      # advisories you can't easily patch out of transitive deps. If this
+      # fails, either:
+      #   • bump the direct dependency to a patched version
+      #   • pin the transitive via pnpm.overrides in root package.json
+      #   • if neither is possible and the risk is accepted, use
+      #     `pnpm audit --ignore-registry-errors` with an explicit advisory
+      #     ID whitelist (document the exception in a commit message).
+      - name: Dependency CVE audit (prod deps, high/critical only)
+        run: pnpm audit --prod --audit-level=high
+
+      # ESLint across every web app. Shared flat config lives in
+      # packages/eslint-config-web; each app's eslint.config.mjs is a
+      # three-line re-export. Baseline is `--max-warnings 0` — new
+      # warnings fail the build. Silencing a rule inline requires a WHY
+      # comment next to the `eslint-disable-next-line`.
+      - name: ESLint (zero warnings across all web apps)
+        run: |
+          set -e
+          for app in shell accounting-web buying-web crm-web hr-web projects-web stock-web portal-web; do
+            echo "::group::eslint $app"
+            pnpm --filter "@lumaara/$app" exec eslint . --max-warnings 0
+            echo "::endgroup::"
+          done
+
+      # Next.js build catches issues typecheck misses: broken image
+      # config, invalid metadata exports, ISR misconfig, missing "use client"
+      # boundaries. Run on shell (host) + accounting-web (largest module)
+      # as a proxy for the other 6 which follow the same shape.
+      - name: Next build (shell + accounting-web)
+        run: |
+          pnpm --filter @lumaara/shell build
+          pnpm --filter @lumaara/accounting-web build
+
+  # Fast detector job: emits code=true if the PR touches anything other
+  # than docs/markdown/media. On push events it's always true. Used to gate
+  # the (expensive) e2e job without having to annotate every e2e step.
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.changes.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: changes
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" || true)
+          echo "$CHANGED" | sed 's/^/  /'
+          CODE=$(echo "$CHANGED" | grep -Ev '^(docs/|.*\.md$|\.github/ISSUE_TEMPLATE/|.*\.png$|.*\.jpg$|.*\.svg$|LICENSE$|CODEOWNERS$)' || true)
+          if [ -z "$CODE" ]; then
+            echo "code=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::e2e will be skipped — PR only touches docs"
+          else
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Playwright end-to-end suite. Runs on every pull_request + pushes to
+  # main/develop + workflow_dispatch. The `detect-changes` gate skips when a
+  # PR touches only docs/markdown — those can't break the stack and the
+  # full-stack boot + browser tests take ~10 min per run, which would waste
+  # CI minutes on README edits. Any code change triggers it so a regression
+  # can't land in main without browser-level signal.
+  #
+  # The suite hits shifted ports (4101-4106 backends, 3100-3107 frontends)
+  # matching scripts/start-all-{services,frontends}.sh. Dev-mode Next.js
+  # compiles on first request; scripts/wait-for-stack.sh polls each URL
+  # until 2xx before Playwright starts.
+  e2e:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lumaara
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+    env:
+      # Match scripts/start-all-services.sh — those export the same values.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/lumaara?schema=public
+      JWT_SECRET: dev-only-local-secret-do-not-use-in-prod-9b3f2e
+      PORTAL_JWT_SECRET: dev-only-portal-secret-do-not-use-in-prod-6a1c8d
+      UNSUBSCRIBE_SECRET: dev-only-unsubscribe-secret-6f2b0a
+      MASTER_SECRET_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      PORTAL_PUBLIC_URL: http://localhost:3107
+      REDIS_URL: redis://localhost:6379
+      # Tenant-guard: WARN mode in CI. E2E hitting the wrong code path
+      # should show up in the report artifact, not 500-out the whole run.
+      TENANT_GUARD_MODE: warn
+      # Keep bcrypt cheap in CI; prod default is 12. Signup/login paths
+      # otherwise add ~300ms each per test.
+      BCRYPT_COST: "4"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Prisma generate + deploy
+        run: |
+          pnpm --filter @lumaara/db exec prisma generate
+          pnpm --filter @lumaara/db exec prisma migrate deploy
+
+      - name: Seed demo tenant (creates demo/demo@lumaara.local for Playwright login)
+        run: pnpm --filter @lumaara/db seed
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @lumaara/e2e exec playwright install --with-deps chromium
+
+      - name: Launch backend services (background)
+        run: |
+          bash scripts/start-all-services.sh
+          echo "services started; tailing logs on failure"
+
+      - name: Launch frontends (background)
+        run: |
+          bash scripts/start-all-frontends.sh
+          echo "frontends started"
+
+      - name: Wait for stack ready
+        run: bash scripts/wait-for-stack.sh
+
+      - name: Run Playwright suite
+        working-directory: e2e
+        run: pnpm test
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload service logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-logs
+          path: /tmp/lumaara-*.log
+          if-no-files-found: warn
+          retention-days: 7
+
+  # Supply-chain hygiene — runs on every PR + push. Non-blocking: an audit
+  # finding doesn't fail the build (would be a maintainability nightmare
+  # with transitive deps), but the report is uploaded + anything High+
+  # severity gets commented on the PR.
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+
+      - name: pnpm audit (High+ severity)
+        continue-on-error: true
+        run: |
+          pnpm audit --prod --audit-level=high --json > pnpm-audit.json || true
+          echo "## Audit summary" >> $GITHUB_STEP_SUMMARY
+          jq -r '.metadata.vulnerabilities // {}' pnpm-audit.json >> $GITHUB_STEP_SUMMARY || echo "no audit output" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pnpm-audit
+          path: pnpm-audit.json
+          retention-days: 30
+
+      - name: Generate SBOM (CycloneDX)
+        run: |
+          npx --yes @cyclonedx/cyclonedx-npm --output-format JSON --output-file sbom.json || {
+            echo "SBOM generation failed (non-blocking)"
+            exit 0
+          }
+
+      - name: Upload SBOM
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
+          retention-days: 90

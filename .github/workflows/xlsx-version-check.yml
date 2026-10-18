@@ -1,0 +1,107 @@
+# Weekly check for a newer SheetJS/xlsx release on the CDN.
+#
+# The npm `xlsx` package is deprecated — SheetJS publishes patches only
+# via https://cdn.sheetjs.com/*. Dependabot can't track that, so this
+# workflow does: scrape the "latest" marker on their index, compare to
+# packages/db/package.json's pinned tarball, and open an issue when a
+# newer version is available.
+#
+# Not an auto-merge PR — SheetJS releases include breaking changes
+# occasionally, and the xlsx API we use (read/XLSX.utils.sheet_to_json)
+# is sensitive to those. Human review on each bump.
+
+name: xlsx-version-check
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve the latest xlsx release from the SheetJS CDN
+        id: latest
+        run: |
+          # The SheetJS index lists versions; grab the highest 0.x.y that
+          # resolves to an actual tarball.
+          HTML=$(curl -sfL https://cdn.sheetjs.com/ || echo "")
+          # Match hrefs like "xlsx-0.20.3/" and extract versions.
+          LATEST=$(echo "$HTML" | grep -oE 'xlsx-[0-9]+\.[0-9]+\.[0-9]+/' \
+            | sed 's|xlsx-||; s|/||' \
+            | sort -V \
+            | tail -1)
+          if [ -z "$LATEST" ]; then
+            echo "::warning::Could not parse SheetJS index; aborting silently."
+            echo "latest=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Latest SheetJS version on CDN: $LATEST"
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+
+      - name: Compare to packages/db/package.json pin
+        id: compare
+        run: |
+          LATEST="${{ steps.latest.outputs.latest }}"
+          [ -z "$LATEST" ] && { echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0; }
+          PINNED=$(node -e "
+            const p = require('./packages/db/package.json');
+            const url = p.dependencies.xlsx || '';
+            const m = url.match(/xlsx-([0-9]+\.[0-9]+\.[0-9]+)/);
+            console.log(m ? m[1] : '');
+          ")
+          echo "Pinned: $PINNED | Latest: $LATEST"
+          echo "pinned=$PINNED" >> "$GITHUB_OUTPUT"
+          if [ "$PINNED" = "$LATEST" ] || [ -z "$PINNED" ]; then
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open issue for new xlsx version
+        if: steps.compare.outputs.skip == '0'
+        uses: actions/github-script@v7
+        env:
+          PINNED: ${{ steps.compare.outputs.pinned }}
+          LATEST: ${{ steps.latest.outputs.latest }}
+        with:
+          script: |
+            const title = `[deps] xlsx ${process.env.PINNED} → ${process.env.LATEST} available`;
+            // Dedupe: don't open a second issue for the same version.
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "dependencies",
+            });
+            if (open.data.some(i => i.title === title)) {
+              console.log("Issue already open; skipping.");
+              return;
+            }
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              labels: ["dependencies"],
+              body: [
+                `SheetJS published \`xlsx-${process.env.LATEST}\` on https://cdn.sheetjs.com/.`,
+                "",
+                "Bump:",
+                "",
+                "1. Update `packages/db/package.json`:",
+                "   ```json",
+                `   "xlsx": "https://cdn.sheetjs.com/xlsx-${process.env.LATEST}/xlsx-${process.env.LATEST}.tgz"`,
+                "   ```",
+                "2. `pnpm install`",
+                "3. Run tests, especially the import path in `packages/db/src/xlsx.ts`.",
+                "4. Scan the SheetJS CHANGELOG for breaking changes.",
+                "",
+                `Previous pin: \`${process.env.PINNED}\`. Open because dependabot can't track CDN tarballs.`,
+              ].join("\n"),
+            });
