@@ -12,7 +12,7 @@
     "react": "^19.0.0-rc"
   },
   "devDependencies": {
-    "@types/react": "^18.3.0",
+    "@types/react": "^19.3.0",
     "typescript": "^5.6.0",
     "vitest": "^3.2.7"
   }
