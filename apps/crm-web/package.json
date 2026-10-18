@@ -13,7 +13,7 @@
     "@lumaara/shared-types": "workspace:*",
     "@lumaara/web-i18n": "workspace:*",
     "@lumaara/web-ui": "workspace:*",
-    "next": "15.5.24",
+    "next": "16.4.1",
     "react": "19.0.0-rc-1631855f-20241023",
     "react-dom": "19.0.0-rc-1631855f-20241023",
     "reactflow": "^11.11.4"
